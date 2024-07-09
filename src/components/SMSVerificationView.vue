@@ -5,6 +5,7 @@
         <p>電話番号を入力してください</p>
         <input v-model="phoneNumber" type="tel" placeholder="+81 90 1234 5678" />
         <button @click="sendSMS" :disabled="!isValidPhoneNumber || isLoading">SMSを送信</button>
+        <div id="recaptcha-container"></div> <!-- reCAPTCHAコンテナ -->
       </div>
       <div v-else-if="step === 'code'">
         <p>SMSで送信された6桁のコードを入力してください</p>
@@ -13,59 +14,85 @@
       </div>
       <p v-if="error" class="error">{{ error }}</p>
       <p v-if="isLoading">処理中...</p>
-      
+  
       <!-- スキップボタンを追加 -->
       <button @click="skipVerification" class="skip-button">認証をスキップ（開発用）</button>
     </div>
   </template>
   
   <script>
-  import { ref, computed } from 'vue'
-  import { useRouter } from 'vue-router'
-  import { useStore } from 'vuex'
+  import { ref, computed } from 'vue';
+  import { useRouter } from 'vue-router';
+  import { useStore } from 'vuex';
+  import { auth } from '../firebase';
+  import { RecaptchaVerifier, signInWithPhoneNumber, PhoneAuthProvider, signInWithCredential } from 'firebase/auth';
   
   export default {
     name: 'SMSVerificationView',
     setup() {
-      const router = useRouter()
-      const store = useStore()
+      const router = useRouter();
+      const store = useStore();
   
-      const step = ref('phone')
-      const phoneNumber = ref('')
-      const verificationCode = ref('')
-      const error = ref('')
-      const isLoading = ref(false)
+      const step = ref('phone');
+      const phoneNumber = ref('');
+      const verificationCode = ref('');
+      const error = ref('');
+      const isLoading = ref(false);
+      let confirmationResult = null;
+      let recaptchaVerifier = null;
   
       const isValidPhoneNumber = computed(() => {
-        // 簡単な電話番号バリデーション（実際はもっと厳密に）
-        return phoneNumber.value.length >= 10
-      })
+        return phoneNumber.value.length >= 10;
+      });
   
       const isValidCode = computed(() => {
-        return verificationCode.value.length === 6
-      })
+        return verificationCode.value.length === 6;
+      });
   
       const sendSMS = async () => {
-        // SMS送信のモック処理
-        console.log('SMS sent to', phoneNumber.value)
-        step.value = 'code'
-      }
+        isLoading.value = true;
+        error.value = '';
+        try {
+          if (!recaptchaVerifier) {
+            recaptchaVerifier = new RecaptchaVerifier('recaptcha-container', {
+              size: 'invisible',
+            }, auth);
+          }
+          confirmationResult = await signInWithPhoneNumber(auth, phoneNumber.value, recaptchaVerifier);
+          step.value = 'code';
+        } catch (e) {
+          error.value = e.message;
+        } finally {
+          isLoading.value = false;
+        }
+      };
   
       const verifyCode = async () => {
-        // 認証のモック処理
-        console.log('Verification successful')
-        completeVerification()
-      }
+        isLoading.value = true;
+        error.value = '';
+        try {
+          const credential = PhoneAuthProvider.credential(
+            confirmationResult.verificationId,
+            verificationCode.value
+          );
+          await signInWithCredential(auth, credential);
+          completeVerification();
+        } catch (e) {
+          error.value = e.message;
+          console.error(e)
+        } finally {
+          isLoading.value = false;
+        }
+      };
   
       const skipVerification = () => {
-        // 認証をスキップしてホーム画面に遷移
-        completeVerification()
-      }
+        completeVerification();
+      };
   
       const completeVerification = () => {
-        store.commit('setIsRegistered', true)
-        router.push('/') // ホーム画面に遷移
-      }
+        store.commit('setIsRegistered', true);
+        router.push('/'); // ホーム画面に遷移
+      };
   
       return {
         step,
@@ -77,10 +104,10 @@
         isValidCode,
         sendSMS,
         verifyCode,
-        skipVerification
-      }
-    }
-  }
+        skipVerification,
+      };
+    },
+  };
   </script>
   
   <style scoped>
@@ -128,3 +155,4 @@
     background-color: #ff6b6b;
   }
   </style>
+  

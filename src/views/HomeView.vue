@@ -3,49 +3,33 @@
     <HeaderView />
     <div class="content">
       <div class="existing-content">
-        <!-- 既存のコンテンツ -->
-        <div class="top-child"></div>
-        <div class="top-item"></div>
-        <div class="top-inner"></div>
-        <div class="rectangle-div"></div>
-        <div class="top-child1"></div>
-        <div class="top-child2"></div>
-        <div class="top-child3"></div>
-        <div class="top-child4"></div>
-        <div class="div">20</div>
-        <div class="div1">19</div>
-        <div class="div2">18</div>
-        <div class="div3">17</div>
-        <b class="b">{{ currentDate }}</b>
-        <div class="training">#training</div>
-        <div class="top-child5"></div>
-        <div class="div4">21</div>
-        <div class="book">#book</div>
-        <img class="add-a-photo-icon" alt="" src="add_a_photo.svg" />
-        <div class="top-child6" @click="onAddPhotoClick"></div>
-        <img class="add-a-photo-icon1" alt="" src="add_a_photo.svg" />
-        <div class="div5">82</div>
-        <div class="div6">81</div>
-        <div class="div7">80</div>
-        <div class="div8">79</div>
-        <div class="div9">78</div>
+        <b class="date">{{ currentDate }}</b>
+        <div v-for="(category, index) in categories" :key="category.name" class="category" :class="`category-${index + 1}`">
+          <div class="category-title">#{{ category.name }}</div>
+          <div class="category-details">
+            <div class="add-photo" @click="() => onAddPhotoClick(category.name)">
+              <img class="add-a-photo-icon" alt="" src="add_a_photo.svg" />
+              <div class="category-count">{{ category.count }}</div>
+              <!-- 右下にSVGを追加 -->
+              <svg @click.stop="showPhotoComponent" class="camera-icon"  width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M30.2123 9.71613H25.8562L23.3414 6.96776H15.0963V9.71613H22.1321L24.6469 12.4645H30.2123V28.9547H8.22541V16.587H5.47704V28.9547C5.47704 30.4663 6.71381 31.7031 8.22541 31.7031H30.2123C31.7239 31.7031 32.9607 30.4663 32.9607 28.9547V12.4645C32.9607 10.9529 31.7239 9.71613 30.2123 9.71613ZM12.348 20.7096C12.348 24.5023 15.4261 27.5805 19.2189 27.5805C23.0116 27.5805 26.0898 24.5023 26.0898 20.7096C26.0898 16.9168 23.0116 13.8387 19.2189 13.8387C15.4261 13.8387 12.348 16.9168 12.348 20.7096ZM19.2189 16.587C21.4863 16.587 23.3414 18.4422 23.3414 20.7096C23.3414 22.977 21.4863 24.8321 19.2189 24.8321C16.9515 24.8321 15.0963 22.977 15.0963 20.7096C15.0963 18.4422 16.9515 16.587 19.2189 16.587ZM8.22541 9.71613H12.348V6.96776H8.22541V2.84521H5.47704V6.96776H1.35449V9.71613H5.47704V13.8387H8.22541V9.71613Z" fill="white"/>
+              </svg>
+
+            </div>
+          </div>
+          <div class="category-items">
+            <div v-for="(item, i) in getFilteredItems(category)" :key="item.id" class="category-item" :class="`item-${4 - i}`" :style="{ zIndex: 3 - i }">
+              <span>{{ item.count }}</span>
+            </div>
+          </div>
+        </div>
       </div>
-      
-      <!-- タイムラインセクション -->
+
       <div class="timeline-section">
         <div class="timeline">
-          <div class="timeline-column">
+          <div v-for="column in [leftColumnItems, rightColumnItems]" :key="column" class="timeline-column">
             <TimelineItem
-              v-for="item in leftColumnItems"
-              :key="item.id"
-              :imageUrl="item.imageUrl"
-              :description="item.description"
-              :timestamp="item.timestamp"
-            />
-          </div>
-          <div class="timeline-column">
-            <TimelineItem
-              v-for="item in rightColumnItems"
+              v-for="item in column"
               :key="item.id"
               :imageUrl="item.imageUrl"
               :description="item.description"
@@ -58,6 +42,9 @@
     <FooterView />
   </div>
 </template>
+
+
+
 
 <script>
 import { ref, computed } from 'vue';
@@ -75,45 +62,69 @@ export default {
   setup() {
     const currentDate = ref(new Date().toISOString().split('T')[0].replace(/-/g, '.'));
     
+    const categories = ref([
+      { name: 'training', count: 0, items: [] },
+      { name: 'book', count: 0, items: [] }
+    ]);
+
     const timelineItems = ref([
       { id: 1, imageUrl: 'path/to/image1.jpg', description: 'First upload', timestamp: new Date('2024-06-15T10:00:00') },
-      { id: 2, imageUrl: 'path/to/image2.jpg', description: 'Second upload', timestamp: new Date('2024-06-15T11:30:00') },
-      { id: 3, imageUrl: 'path/to/image3.jpg', description: 'Third upload', timestamp: new Date('2024-06-15T14:15:00') },
     ]);
 
     const leftColumnItems = computed(() => timelineItems.value.filter((_, index) => index % 2 === 0));
     const rightColumnItems = computed(() => timelineItems.value.filter((_, index) => index % 2 !== 0));
 
-    const onAddPhotoClick = () => {
-      console.log('Add photo clicked');
-      const newItem = {
-        id: timelineItems.value.length + 1,
-        imageUrl: 'path/to/new-image.jpg',
-        description: 'New upload',
-        timestamp: new Date()
-      };
-      timelineItems.value.unshift(newItem);
+    const getFilteredItems = (category) => {
+      return category.items.slice(0, 4).map((item, i) => {
+        const count = category.count - i - 1;
+        return count > 0 ? { ...item, count } : null;
+      }).filter(item => item !== null);
+    };
+
+    const onAddPhotoClick = (categoryName) => {
+      const category = categories.value.find(cat => cat.name === categoryName);
+      if (category) {
+        category.count += 1;
+        const newItem = {
+          id: timelineItems.value.length + 1,
+          imageUrl: 'path/to/new-image.jpg',
+          description: `New upload for ${categoryName}`,
+          timestamp: new Date()
+        };
+        timelineItems.value.unshift(newItem);
+        category.items.unshift(newItem);
+        if (category.items.length > 4) {
+          category.items.pop(); // 最後のアイテムを削除
+        }
+      }
+    };
+
+    const showPhotoComponent = () => {
+      console.log('Show photo component');
+      // ここに写真を撮るためのコンポーネント表示処理を追加します。
     };
 
     return {
       currentDate,
+      categories,
       leftColumnItems,
       rightColumnItems,
-      onAddPhotoClick
+      getFilteredItems,
+      onAddPhotoClick,
+      showPhotoComponent
     };
   }
 };
 </script>
 
+
+
+
 <style scoped>
 .top {
   width: 100%;
-  position: relative;
-  background-color: #2f4f4f;
   min-height: 100vh;
-  overflow-x: hidden;
-  text-align: center;
-  font-size: 24.22px;
+  background-color: #2f4f4f;
   color: rgba(255, 255, 255, 0.9);
   font-family: Commissioner, sans-serif;
   display: flex;
@@ -125,21 +136,125 @@ export default {
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  padding-top: 60px; /* 固定ヘッダーのスペース */
-  padding-bottom: 80px; /* 固定フッターのスペース */
+  padding: 60px 0 80px;
 }
 
 .existing-content {
   position: relative;
-  height: 700px; /* 既存のコンテンツの高さを固定 */
+  height: 700px;
 }
+
+.date {
+  text-align: center;
+  font-size: 12px;
+  font-family: Inter, sans-serif;
+}
+
+.category {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.category-1 {
+  top: 5%;
+  left: 10%;
+}
+
+.category-2 {
+  top: 40%;
+  left: 10%;
+}
+
+.category-title {
+  font-size: 18.52px;
+  letter-spacing: -0.32px;
+  line-height: 34.37px;
+  font-weight: 500;
+  font-family: Inter, sans-serif;
+}
+
+.category-details {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.add-photo {
+  position: relative;
+  width: 138.7px;
+  height: 173.4px;
+  background-color: #d3d3d3;
+  border-radius: 17.06px;
+  box-shadow: 0px 4.55px 4.55px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4;
+}
+
+.add-a-photo-icon {
+  width: 8.8%;
+  height: 3.86%;
+}
+
+.category-count {
+  padding-bottom: 15px;
+  position: absolute;
+  font-size: 90.98px;
+  font-weight: 800;
+  z-index: 5;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: "Commissioner", sans-serif;
+}
+
+.camera-icon {
+  position: absolute;
+  bottom: 15px;
+  right: 15px;
+  width: 35px;
+  height: 28px;
+  cursor: pointer;
+}
+
+.category-items {
+  display: flex;
+  gap: 0px;
+  margin-left: 140px;
+  margin-top: -100px;
+}
+
+.category-item {
+  width: 77.3px;
+  height: 96.7px;
+  background-color: #d3d3d3;
+  border-radius: 9.51px;
+  box-shadow: 0px 2.54px 2.54px rgba(0, 0, 0, 0.25);
+  transform: rotate(10deg);
+  display: flex;
+  align-items: flex-end; /* 下部に寄せる */
+  justify-content: flex-end; /* 右に寄せる */
+  margin-left: -30px;
+  z-index: 3;
+  padding: 5px; /* 数値が右下に寄りすぎないように調整 */
+  position: relative; /* 数値の位置を調整するために必要 */
+}
+
+.category-item span {
+  transform: rotate(-10deg); /* 数値を元の角度に戻す */
+  font-size: 28px; /* 数値の大きさを調整 */
+  font-weight: 800;
+  position: absolute; /* 数値を固定する */
+  bottom: 5px; /* 数値を下に寄せる */
+  right: 5px; /* 数値を右に寄せる */
+}
+
+
 
 .timeline-section {
   padding: 20px;
-}
-
-.timeline-section h2 {
-  margin-bottom: 20px;
 }
 
 .timeline {
@@ -151,227 +266,5 @@ export default {
 .timeline-column {
   flex: 1;
   max-width: 48%;
-}
-
-/* 既存のスタイル */
-.top-child,
-.top-item,
-.top-inner,
-.rectangle-div {
-  position: absolute;
-  top: 243.35px;
-  box-shadow: 0px 2.5355188846588135px 2.54px rgba(0, 0, 0, 0.25);
-  border-radius: 9.51px;
-  background-color: #d3d3d3;
-  width: 77.3px;
-  height: 96.7px;
-  transform: rotate(10deg);
-  transform-origin: 0 0;
-}
-
-.top-child { left: 266.06px; }
-.top-item { left: 227.39px; }
-.top-inner { left: 188.73px; }
-.rectangle-div { left: 150.06px; }
-
-.top-child1,
-.top-child2,
-.top-child3,
-.top-child4 {
-  position: absolute;
-  top: 471.45px;
-  box-shadow: 0px 2.5438289642333984px 2.54px rgba(0, 0, 0, 0.25);
-  border-radius: 9.54px;
-  background-color: #d3d3d3;
-  width: 77.6px;
-  height: 97px;
-  transform: rotate(10deg);
-  transform-origin: 0 0;
-}
-
-.top-child1 { left: 266.8px; }
-.top-child2 { left: 228px; }
-.top-child3 { left: 189.21px; }
-.top-child4 { left: 150.42px; }
-
-.div, .div1, .div2, .div3 {
-  position: absolute;
-  top: 547px;
-  font-weight: 800;
-}
-
-.div { left: 180px; }
-.div1 { left: 219.93px; }
-.div2 { left: 258.73px; }
-.div3 { left: 298.66px; }
-
-.sunny1-icon {
-  position: absolute;
-  top: 50px;
-  left: 144px;
-  width: 88px;
-  height: 34.1px;
-  object-fit: cover;
-}
-
-.sort-icon {
-  position: absolute;
-  height: 2.81%;
-  width: 6.4%;
-  top: 6.67%;
-  right: 5.07%;
-  bottom: 90.53%;
-  left: 88.53%;
-  max-width: 100%;
-  overflow: hidden;
-  max-height: 100%;
-  cursor: pointer;
-}
-
-.b {
-  position: absolute;
-  top: 112px;
-  left: 153px;
-  font-size: 11.9px;
-  font-family: Inter, sans-serif;
-  color: #fff;
-  text-align: left;
-}
-
-.training {
-  position: absolute;
-  top: 16.02%;
-  left: 14.13%;
-  font-size: 18.52px;
-  letter-spacing: -0.32px;
-  line-height: 34.37px;
-  font-weight: 500;
-  font-family: Inter, sans-serif;
-  color: #fff;
-  text-align: left;
-}
-
-.top-child5 {
-  position: absolute;
-  top: 401px;
-  left: 41px;
-  box-shadow: 0px 4.563928604125977px 4.56px rgba(0, 0, 0, 0.25);
-  border-radius: 17.11px;
-  background-color: #d3d3d3;
-  width: 139.2px;
-  height: 174px;
-}
-
-.div4 {
-  position: absolute;
-  top: 421.54px;
-  left: 62.68px;
-  font-size: 91.28px;
-  font-weight: 800;
-  color: #fff;
-}
-
-.book {
-  position: absolute;
-  top: 42.81%;
-  left: 14.4%;
-  font-size: 18.52px;
-  letter-spacing: -0.32px;
-  line-height: 34.37px;
-  font-weight: 500;
-  font-family: Inter, sans-serif;
-  color: #fff;
-  text-align: left;
-}
-
-.add-a-photo-icon {
-  position: absolute;
-  height: 3.87%;
-  width: 8.83%;
-  top: 62.51%;
-  right: 54.38%;
-  bottom: 33.61%;
-  left: 36.8%;
-  max-width: 100%;
-  overflow: hidden;
-  max-height: 100%;
-}
-
-.top-child6 {
-  position: absolute;
-  top: 172px;
-  left: 41px;
-  box-shadow: 0px 4.5490193367004395px 4.55px rgba(0, 0, 0, 0.25);
-  border-radius: 17.06px;
-  background-color: #d3d3d3;
-  width: 138.7px;
-  height: 173.4px;
-  cursor: pointer;
-}
-
-.add-a-photo-icon1 {
-  position: absolute;
-  height: 3.86%;
-  width: 8.8%;
-  top: 35.41%;
-  right: 54.49%;
-  bottom: 60.73%;
-  left: 36.71%;
-  max-width: 100%;
-  overflow: hidden;
-  max-height: 100%;
-}
-
-.div5 {
-  position: absolute;
-  top: 192.47px;
-  left: 55.78px;
-  font-size: 90.98px;
-  font-weight: 800;
-  color: #fff;
-}
-
-.div6, .div7, .div8, .div9 {
-  position: absolute;
-  top: 319px;
-  font-size: 24.14px;
-  font-weight: 800;
-}
-
-.div6 { left: 182px; }
-.div7 { left: 218.39px; }
-.div8 { left: 259.33px; }
-.div9 { left: 296.86px; }
-
-.vector-icon {
-  position: absolute;
-  top: 746px;
-  left: 277px;
-  width: 80px;
-  height: 80px;
-  cursor: pointer;
-}
-
-.search-icon, .notifications-icon {
-  position: absolute;
-  height: 3.27%;
-  width: 7.47%;
-  top: 6.2%;
-  max-width: 100%;
-  overflow: hidden;
-  max-height: 100%;
-  cursor: pointer;
-}
-
-.search-icon {
-  right: 70.93%;
-  bottom: 90.53%;
-  left: 21.6%;
-}
-
-.notifications-icon {
-  right: 15.2%;
-  bottom: 90.53%;
-  left: 78.4%;
 }
 </style>

@@ -1,13 +1,71 @@
 <template>
-  <div class="user-profile" @touchstart="startTouch" @touchmove="moveTouch">
-    <div class="header">
-      <button class="back-button" @click="goToHome">←</button>
-      <h2>{{ username }}</h2>
+  <div class="profile-view">
+    <!-- プロフィール画像 -->
+    <div class="profile-image">
+      <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+        <circle cx="32" cy="32" r="32" fill="#D9D9D9"/>
+      </svg>
     </div>
-    <div class="user-info">
-      <!-- 他のユーザー情報 -->
+
+    <!-- ユーザーネーム -->
+    <div class="username">seika_tamukai</div>
+
+    <!-- 自己紹介 -->
+    <div class="description">nutsモデルの田向星華です。</div>
+
+    <!-- プロフィールを編集するボタン -->
+    <button class="edit-profile" @click="goToHome()">プロフィールを編集する</button>
+
+    <!-- フォロー・フォロワー -->
+    <div class="follow-info">
+      <div class="follow" @click="goToHome()">
+        <div class="follow-count">79</div>
+        <div class="follow-text">follow</div>
+      </div>
+      <div class="follower" @click="goToHome()">
+        <div class="follower-count">25k</div>
+        <div class="follower-text">follower</div>
+      </div>
     </div>
-    <!-- 他のプロフィールページの内容 -->
+
+    <!-- 画像コンテンツセット1 -->
+    <div class="content-set">
+      <!-- ハッシュタグ -->
+      <div class="hashtags">
+        <div class="hashtag">#training</div>
+      </div>
+      <div class="content">
+        <div class="content-box">80</div>
+        <div class="content-box">+</div>
+        <div class="content-box">+</div>
+      </div>
+    </div>
+
+    <!-- 画像コンテンツ追加セット2 -->
+    <div class="content-set">
+      <!-- ハッシュタグ -->
+      <div class="hashtags">
+        <div class="hashtag">#training</div>
+      </div>
+      <div class="content">
+        <div class="content-box">80</div>
+        <div class="content-box">+</div>
+        <div class="content-box">+</div>
+      </div>
+    </div>
+
+    <!-- 画像コンテンツ追加セット3 -->
+    <div class="content-set">
+      <!-- ハッシュタグ -->
+      <div class="hashtags">
+        <div class="hashtag">#training</div>
+      </div>
+      <div class="content">
+        <div class="content-box">80</div>
+        <div class="content-box">+</div>
+        <div class="content-box">+</div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -46,30 +104,128 @@ export default {
 }
 </script>
 
-
 <style scoped>
-.user-profile {
-  padding: 20px;
-  background-color: #fff;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-}
-.header {
+.profile-view {
   display: flex;
+  flex-direction: column;
   align-items: center;
+  padding: 20px;
+  background: #2F4F4F;
+  min-height: 100vh;
 }
-.back-button {
-  background: none;
-  border: none;
-  font-size: 24px;
+.profile-image {
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  margin-top: 40px;
+}
+.username {
+  color: #FFF;
+  text-align: right;
+  font-family: Inter;
+  font-size: 12.992px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 13px;
+  letter-spacing: -0.291px;
+  margin-top: 3px;
+}
+.description {
+  color: #FFF;
+  text-align: center;
+  font-family: Inter;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 10px;
+  letter-spacing: -0.291px;
+  margin-top: 5px;
+}
+.edit-profile {
+  width: 96.545px;
+  height: 24px;
+  flex-shrink: 0;
+  border-radius: 20px;
+  background: #ECECEC;
+  margin-top: 20px;
+  color: #000;
+  text-align: center;
+  font-family: Chenla;
+  font-size: 6.191px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 11.49px;
+  letter-spacing: -0.105px;
+}
+.follow-info {
+  display: flex;
+  justify-content: space-between;
+  width: 22%;
+  margin-top: 5px;
+}
+.follow, .follower {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   cursor: pointer;
-  margin-right: 10px;
 }
-.user-info {
-  margin-bottom: 20px;
+.follow-count, .follower-count {
+  color: #FFF;
+  font-family: Commissioner;
+  font-size: 19.725px;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 1.2px;
+  margin-top: 15px;
 }
-h2 {
-  font-size: 24px;
-  margin-bottom: 10px;
+.follow-text, .follower-text {
+  color: #FFF;
+  text-align: center;
+  font-family: Inter;
+  font-size: 8.436px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1.2px;
+  letter-spacing: -0.351px;
+  margin-top: 15px;
+}
+.hashtags {
+  margin-top: 30px;
+  text-align: left;
+  width: 100%;
+}
+.hashtag {
+  color: #FFF;
+  font-family: Inter;
+  font-size: 10.66px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 10.66px;
+  letter-spacing: -0.239px;
+  margin-left: 0px;
+}
+.content {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: 3px;
+  gap: 5px;
+}
+.content-box {
+  width: 130px;
+  height: 162.5px;
+  flex-shrink: 0;
+  border-radius: 14.718px;
+  background: #D3D3D3;
+  color: rgba(255, 255, 255, 0.90);
+  text-align: center;
+  font-family: Commissioner;
+  font-size: 60.39px;
+  font-style: normal;
+  font-weight: 800;
+  line-height: normal;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 </style>

@@ -39,6 +39,9 @@
 </script>
   
   <style scoped>
+  .sunny{
+    min-height: 100vh;
+  }
   .mobilePhoneMonochromatic1 {
     position: absolute;
     top: 194px;

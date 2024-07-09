@@ -2,13 +2,16 @@
     <div class="sunny-top">
       <h3>設定ページ</h3>
       
+      
       <div class="setting-item" @click="toggleNavBar('terms')">
       <div class="rectangle-parent">
         <div class="group-child"></div>
         <div class="item-text">規約一覧</div>
         <img class="icons-arrow-right" alt="arrow" src="../assets/arrow_right.png" />
       </div>
-      <img class="item-icon" alt="icon" src="Vector.svg" />
+      <svg class="item-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+  <path d="M10 18H20C20.55 18 21 17.55 21 17C21 16.45 20.55 16 20 16H10C9.45 16 9 16.45 9 17C9 17.55 9.45 18 10 18ZM3 7C3 7.55 3.45 8 4 8H20C20.55 8 21 7.55 21 7C21 6.45 20.55 6 20 6H4C3.45 6 3 6.45 3 7ZM10 13H20C20.55 13 21 12.55 21 12C21 11.45 20.55 11 20 11H10C9.45 11 9 11.45 9 12C9 12.55 9.45 13 10 13Z" fill="white"/>
+</svg>
     </div>
     <div v-if="activeItem === 'terms'" class="rectangle-div">
       <div class="nav-item" @click="navigate('privacy')">プライバシーポリシー</div>
@@ -83,6 +86,8 @@
       <div class="nav-item" @click="navigate('private')">非公開</div>
     </div>
         
+
+    <button class="home-button" @click="goToHome">ホームに戻る</button>
         
   
     </div>
@@ -103,12 +108,32 @@
       navigate(action) {
         console.log(`Navigating to ${action}`);
         // ここにナビゲーションのコードを追加
+      },
+      goToHome() {
+        // ホームページに遷移するロジック
+        this.$router.push('/');
       }
     }
   };
   </script>
   
   <style scoped>
+
+
+.home-button {
+  background-color: #008080;
+  color: #ffffff;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  
+}
+
+
+
   .sunny-top {
     width: 100%;
     position: relative;
@@ -129,7 +154,7 @@
     position: relative;
     width: 304px;
     height: 57px;
-    margin: 20px auto;
+    margin: 40px auto;
     cursor: pointer;
   }
   
