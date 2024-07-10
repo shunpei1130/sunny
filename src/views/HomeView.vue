@@ -6,18 +6,19 @@
         <b class="date">{{ currentDate }}</b>
         <div v-for="(category, index) in categories" :key="category.name" class="category" :class="`category-${index + 1}`">
           <div class="category-title">#{{ profile.hashtag || category.name }}</div>
-          <div class="category-details">
-            <div class="add-photo" @click="() => onAddPhotoClick(category.name)">
-              <div class="category-count">{{ category.count }}</div>
-              <!-- 右下にSVGを追加 -->
-              <svg @click.stop="showPhotoComponent" class="camera-icon"  width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M30.2123 9.71613H25.8562L23.3414 6.96776H15.0963V9.71613H22.1321L24.6469 12.4645H30.2123V28.9547H8.22541V16.587H5.47704V28.9547C5.47704 30.4663 6.71381 31.7031 8.22541 31.7031H30.2123C31.7239 31.7031 32.9607 30.4663 32.9607 28.9547V12.4645C32.9607 10.9529 31.7239 9.71613 30.2123 9.71613ZM12.348 20.7096C12.348 24.5023 15.4261 27.5805 19.2189 27.5805C23.0116 27.5805 26.0898 24.5023 26.0898 20.7096C26.0898 16.9168 23.0116 13.8387 19.2189 13.8387C15.4261 13.8387 12.348 16.9168 12.348 20.7096ZM19.2189 16.587C21.4863 16.587 23.3414 18.4422 23.3414 20.7096C23.3414 22.977 21.4863 24.8321 19.2189 24.8321C16.9515 24.8321 15.0963 22.977 15.0963 20.7096C15.0963 18.4422 16.9515 16.587 19.2189 16.587ZM8.22541 9.71613H12.348V6.96776H8.22541V2.84521H5.47704V6.96776H1.35449V9.71613H5.47704V13.8387H8.22541V9.71613Z" fill="white"/>
-              </svg>
+          <div class="category-content" :style="getContentStyle(category)">
+            <div class="category-details">
+              <div class="add-photo" @click="() => onAddPhotoClick(category.name)">
+                <div class="category-count">{{ category.count }}</div>
+                <svg @click.stop="showPhotoComponent" class="camera-icon" width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M30.2123 9.71613H25.8562L23.3414 6.96776H15.0963V9.71613H22.1321L24.6469 12.4645H30.2123V28.9547H8.22541V16.587H5.47704V28.9547C5.47704 30.4663 6.71381 31.7031 8.22541 31.7031H30.2123C31.7239 31.7031 32.9607 30.4663 32.9607 28.9547V12.4645C32.9607 10.9529 31.7239 9.71613 30.2123 9.71613ZM12.348 20.7096C12.348 24.5023 15.4261 27.5805 19.2189 27.5805C23.0116 27.5805 26.0898 24.5023 26.0898 20.7096C26.0898 16.9168 23.0116 13.8387 19.2189 13.8387C15.4261 13.8387 12.348 16.9168 12.348 20.7096ZM19.2189 16.587C21.4863 16.587 23.3414 18.4422 23.3414 20.7096C23.3414 22.977 21.4863 24.8321 19.2189 24.8321C16.9515 24.8321 15.0963 22.977 15.0963 20.7096C15.0963 18.4422 16.9515 16.587 19.2189 16.587ZM8.22541 9.71613H12.348V6.96776H8.22541V2.84521H5.47704V6.96776H1.35449V9.71613H5.47704V13.8387H8.22541V9.71613Z" fill="white"/>
+                </svg>
+              </div>
             </div>
-          </div>
-          <div class="category-items">
-            <div v-for="(item, i) in getFilteredItems(category)" :key="item.id" class="category-item" :class="`item-${4 - i}`" :style="{ zIndex: 3 - i }">
-              <span>{{ item.count }}</span>
+            <div class="category-items">
+              <div v-for="(item, i) in getFilteredItems(category)" :key="item.id" class="category-item" :class="`item-${4 - i}`" :style="{ zIndex: 3 - i }">
+                <span>{{ item.count }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -40,9 +41,6 @@
     <FooterView />
   </div>
 </template>
-
-
-
 
 <script>
 import { ref, computed } from 'vue';
@@ -68,8 +66,7 @@ export default {
       { name: 'book', count: 0, items: [] }
     ]);
 
-    const timelineItems = ref([
-    ]);
+    const timelineItems = ref([]);
 
     const leftColumnItems = computed(() => timelineItems.value.filter((_, index) => index % 2 === 0));
     const rightColumnItems = computed(() => timelineItems.value.filter((_, index) => index % 2 !== 0));
@@ -94,14 +91,24 @@ export default {
         timelineItems.value.unshift(newItem);
         category.items.unshift(newItem);
         if (category.items.length > 3) {
-          category.items.pop(); // 最後のアイテムを削除
+          category.items.pop();
         }
       }
     };
 
     const showPhotoComponent = () => {
       console.log('Show photo component');
-      // ここに写真を撮るためのコンポーネント表示処理を追加します。
+    };
+
+    const getContentStyle = (category) => {
+      const itemCount = category.items.length;
+      if (itemCount <= 1) {
+        return {}; // 0または1の場合、変換なし
+      }
+      const offset = (itemCount - 1) * 40; // 2つ目以降のアイテムからずらし始める
+      return {
+        transform: `translateX(-${offset}px)`
+      };
     };
 
     return {
@@ -112,15 +119,12 @@ export default {
       getFilteredItems,
       onAddPhotoClick,
       showPhotoComponent,
-      profile // 追加
+      profile,
+      getContentStyle,
     };
   }
 };
 </script>
-
-
-
-
 
 <style scoped>
 .top {
@@ -157,12 +161,12 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  width: 100%;
 }
 
 .category-1 {
   top: 5%;
   left: 35%;
-  
 }
 
 .category-2 {
@@ -177,10 +181,18 @@ export default {
   font-family: Inter, sans-serif;
 }
 
+.category-content {
+  display: flex;
+  align-items: flex-start;
+  transition: transform 0.3s ease;
+  flex-direction: column; /* 縦方向に並べる */
+}
+
 .category-details {
   position: relative;
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .add-photo {
@@ -196,7 +208,6 @@ export default {
   justify-content: center;
   z-index: 4;
 }
-
 
 .category-count {
   padding-bottom: 15px;
@@ -218,10 +229,11 @@ export default {
 }
 
 .category-items {
+  padding-top: 10px;
   display: flex;
   gap: 0px;
-  margin-left: 140px;
-  margin-top: -100px;
+  margin-top: -130px; /* 上部のマージンを追加 */
+  margin-left: 140px; /* 左マージンを調整 */
 }
 
 .category-item {
@@ -232,24 +244,22 @@ export default {
   box-shadow: 0px 2.54px 2.54px rgba(0, 0, 0, 0.25);
   transform: rotate(10deg);
   display: flex;
-  align-items: flex-end; /* 下部に寄せる */
-  justify-content: flex-end; /* 右に寄せる */
+  align-items: flex-end;
+  justify-content: flex-end;
   margin-left: -30px;
-  z-index: 3;
-  padding: 5px; /* 数値が右下に寄りすぎないように調整 */
-  position: relative; /* 数値の位置を調整するために必要 */
+  padding: 5px;
+  margin-left: -30px; /* 重なり具合を調整 */
+  position: relative;
 }
 
 .category-item span {
-  transform: rotate(-10deg); /* 数値を元の角度に戻す */
-  font-size: 28px; /* 数値の大きさを調整 */
+  transform: rotate(-10deg);
+  font-size: 28px;
   font-weight: 800;
-  position: absolute; /* 数値を固定する */
-  bottom: 5px; /* 数値を下に寄せる */
-  right: 5px; /* 数値を右に寄せる */
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
 }
-
-
 
 .timeline-section {
   padding: 20px;
