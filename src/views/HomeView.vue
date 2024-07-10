@@ -5,16 +5,14 @@
       <div class="existing-content">
         <b class="date">{{ currentDate }}</b>
         <div v-for="(category, index) in categories" :key="category.name" class="category" :class="`category-${index + 1}`">
-          <div class="category-title">#{{ category.name }}</div>
+          <div class="category-title">#{{ profile.hashtag || category.name }}</div>
           <div class="category-details">
             <div class="add-photo" @click="() => onAddPhotoClick(category.name)">
-              <img class="add-a-photo-icon" alt="" src="add_a_photo.svg" />
               <div class="category-count">{{ category.count }}</div>
               <!-- 右下にSVGを追加 -->
               <svg @click.stop="showPhotoComponent" class="camera-icon"  width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M30.2123 9.71613H25.8562L23.3414 6.96776H15.0963V9.71613H22.1321L24.6469 12.4645H30.2123V28.9547H8.22541V16.587H5.47704V28.9547C5.47704 30.4663 6.71381 31.7031 8.22541 31.7031H30.2123C31.7239 31.7031 32.9607 30.4663 32.9607 28.9547V12.4645C32.9607 10.9529 31.7239 9.71613 30.2123 9.71613ZM12.348 20.7096C12.348 24.5023 15.4261 27.5805 19.2189 27.5805C23.0116 27.5805 26.0898 24.5023 26.0898 20.7096C26.0898 16.9168 23.0116 13.8387 19.2189 13.8387C15.4261 13.8387 12.348 16.9168 12.348 20.7096ZM19.2189 16.587C21.4863 16.587 23.3414 18.4422 23.3414 20.7096C23.3414 22.977 21.4863 24.8321 19.2189 24.8321C16.9515 24.8321 15.0963 22.977 15.0963 20.7096C15.0963 18.4422 16.9515 16.587 19.2189 16.587ZM8.22541 9.71613H12.348V6.96776H8.22541V2.84521H5.47704V6.96776H1.35449V9.71613H5.47704V13.8387H8.22541V9.71613Z" fill="white"/>
               </svg>
-
             </div>
           </div>
           <div class="category-items">
@@ -51,6 +49,7 @@ import { ref, computed } from 'vue';
 import HeaderView from './HeaderView.vue';
 import FooterView from './FooterView.vue';
 import TimelineItem from './TimelineItem.vue';
+import { useStore } from 'vuex';
 
 export default {
   name: 'HomeView',
@@ -60,6 +59,8 @@ export default {
     TimelineItem
   },
   setup() {
+    const store = useStore();
+    const profile = computed(() => store.state.profile);
     const currentDate = ref(new Date().toISOString().split('T')[0].replace(/-/g, '.'));
     
     const categories = ref([
@@ -110,11 +111,13 @@ export default {
       rightColumnItems,
       getFilteredItems,
       onAddPhotoClick,
-      showPhotoComponent
+      showPhotoComponent,
+      profile // 追加
     };
   }
 };
 </script>
+
 
 
 
@@ -158,17 +161,17 @@ export default {
 
 .category-1 {
   top: 5%;
-  left: 10%;
+  left: 35%;
+  
 }
 
 .category-2 {
   top: 40%;
-  left: 10%;
+  left: 35%;
 }
 
 .category-title {
   font-size: 18.52px;
-  letter-spacing: -0.32px;
   line-height: 34.37px;
   font-weight: 500;
   font-family: Inter, sans-serif;
@@ -194,10 +197,6 @@ export default {
   z-index: 4;
 }
 
-.add-a-photo-icon {
-  width: 8.8%;
-  height: 3.86%;
-}
 
 .category-count {
   padding-bottom: 15px;
