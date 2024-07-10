@@ -220,7 +220,7 @@ export default {
   gap: 5px;
 }
 .content-box {
-  width: 130px;
+  width: 120px;
   height: 162.5px;
   flex-shrink: 0;
   border-radius: 14.718px;

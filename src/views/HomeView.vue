@@ -68,7 +68,6 @@ export default {
     ]);
 
     const timelineItems = ref([
-      { id: 1, imageUrl: 'path/to/image1.jpg', description: 'First upload', timestamp: new Date('2024-06-15T10:00:00') },
     ]);
 
     const leftColumnItems = computed(() => timelineItems.value.filter((_, index) => index % 2 === 0));
@@ -93,7 +92,7 @@ export default {
         };
         timelineItems.value.unshift(newItem);
         category.items.unshift(newItem);
-        if (category.items.length > 4) {
+        if (category.items.length > 3) {
           category.items.pop(); // 最後のアイテムを削除
         }
       }
