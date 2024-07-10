@@ -7,6 +7,7 @@ import UserProfile from '../views/UserProfile.vue'
 import SearchView from '../views/SearchView.vue'
 import NotificationView from '../views/NotificationView.vue'
 import SettingView from '../views/SettingView.vue'
+import EditProfile from '../views/EditProfile.vue'
 
 const routes = [
   {
@@ -48,6 +49,11 @@ const routes = [
     path: '/settings',
     name: 'settings',
     component: SettingView
+  },
+  {
+    path: '/EditProfile',
+    name: 'EditProfile',
+    component: EditProfile
   }
 ]
 

@@ -1,6 +1,6 @@
 <template>
+  <HeaderView />
     <div class="sunny-top">
-      <h3>設定ページ</h3>
       
       
       <div class="setting-item" @click="toggleNavBar('terms')">
@@ -87,14 +87,16 @@
     </div>
         
 
-    <button class="home-button" @click="goToHome">ホームに戻る</button>
-        
   
     </div>
   </template>
   
   <script>
+  import HeaderView from './HeaderView.vue';
   export default {
+    components: {
+      HeaderView,
+    },
     name: "SettingView",
     data() {
       return {

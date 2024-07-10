@@ -1,4 +1,5 @@
 <template>
+  <HeaderView />
   <div class="profile-view">
     <!-- プロフィール画像 -->
     <div class="profile-image">
@@ -14,7 +15,7 @@
     <div class="description">nutsモデルの田向星華です。</div>
 
     <!-- プロフィールを編集するボタン -->
-    <button class="edit-profile" @click="goToHome()">プロフィールを編集する</button>
+    <button class="edit-profile" @click="goToEditProfile()">プロフィールを編集する</button>
 
     <!-- フォロー・フォロワー -->
     <div class="follow-info">
@@ -71,8 +72,12 @@
 
 <script>
 import { mapGetters } from 'vuex'
+import HeaderView from './HeaderView.vue';
 
 export default {
+  components: {
+    HeaderView
+  },
   name: 'UserProfile',
   data() {
     return {
@@ -89,6 +94,9 @@ export default {
   methods: {
     goToHome() {
       this.$router.push('/');
+    },
+    goToEditProfile() {
+      this.$router.push('/EditProfile');
     },
     startTouch(event) {
       this.startX = event.touches[0].clientX;
