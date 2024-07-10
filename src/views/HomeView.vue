@@ -8,18 +8,29 @@
           <div class="category-title">#{{ profile.hashtag || category.name }}</div>
           <div class="container" ref="container" @touchstart="touchStart" @touchmove="touchMove" @touchend="touchEnd">
             <div class="carousel" :style="{ transform: `rotateY(${currdeg}deg)` }">
-              <div class="item a" @click="() => onAddPhotoClick(category.name)">
-                <div v-if="!category.items.length" class="add-photo">
-                  <div class="category-count">{{ category.count }}</div>
-                  <svg @click.stop="showPhotoComponent" class="camera-icon" width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M30.2123 9.71613H25.8562L23.3414 6.96776H15.0963V9.71613H22.1321L24.6469 12.4645H30.2123V28.9547H8.22541V16.587H5.47704V28.9547C5.47704 30.4663 6.71381 31.7031 8.22541 31.7031H30.2123C31.7239 31.7031 32.9607 30.4663 32.9607 28.9547V12.4645C32.9607 10.9529 31.7239 9.71613 30.2123 9.71613ZM12.348 20.7096C12.348 24.5023 15.4261 27.5805 19.2189 27.5805C23.0116 27.5805 26.0898 24.5023 26.0898 20.7096C26.0898 16.9168 23.0116 13.8387 19.2189 13.8387C15.4261 13.8387 12.348 16.9168 12.348 20.7096ZM19.2189 16.587C21.4863 16.587 23.3414 18.4422 23.3414 20.7096C23.3414 22.977 21.4863 24.8321 19.2189 24.8321C16.9515 24.8321 15.0963 22.977 15.0963 20.7096C15.0963 18.4422 16.9515 16.587 19.2189 16.587ZM8.22541 9.71613H12.348V6.96776H8.22541V2.84521H5.47704V6.96776H1.35449V9.71613H5.47704V13.8387H8.22541V9.71613Z" fill="white"/>
-                  </svg>
+              <div v-if="!category.items.length" class="item a empty-item" @click="() => onAddPhotoClick(category.name)">
+                <div class="ui">
+                  <div class="ui-inner">
+                    <div class="component-child" />
+                  </div>
+                  <div class="div">
+                    <div class="div1">まだ写真がアップロードされていません</div>
+                  </div>
+                  <div class="div2">
+                    <div class="div1">
+                      <p class="p">初めての写真をシェアして</p>
+                      <p class="p">仲間と継続目標を達成しよう!!</p>
+                    </div>
+                  </div>
+                  <div class="training">
+                    <b class="training1">#{{ category.name }}</b>
+                  </div>
+                  <img class="ui-child" alt="" src="Ellipse 1365.svg" />
+                  <img class="add-a-photo-icon" alt="" src="add_a_photo.svg" />
                 </div>
-                <img v-else :src="category.items[0].imageUrl" alt="Category Photo" class="category-image" />
-                <span v-if="category.items.length" class="item-count">{{ category.count }}</span>
               </div>
-              <div v-for="(item, i) in getFilteredItems(category).slice(1, 6)" :key="item.id" 
-                   class="item" :class="getItemClass(i + 1)">
+              <div v-else v-for="(item, i) in getFilteredItems(category)" :key="item.id" 
+                   class="item" :class="getItemClass(i)" @click="() => onAddPhotoClick(category.name)">
                 <img :src="item.imageUrl" alt="Item Photo" class="category-image" />
                 <span class="item-count">{{ item.count }}</span>
               </div>
@@ -198,7 +209,7 @@ export default {
 }
 
 .category-2 {
-  top: 40%; 
+  top: 50%; 
 }
 
 .category-title {
@@ -211,10 +222,10 @@ export default {
 
 .container {
   margin: 0 auto;
-  width: 138.7px;
-  height: 173.4px;
+  width: 130px;  /* empty-itemの幅に合わせて調整 */
+  height: 213.9px;  /* empty-itemの高さに合わせて調整 */
   position: relative;
-  perspective: 1500px; /* perspectiveを増やして3D効果を強調 */
+  perspective: 1500px;
 }
 
 .carousel {
@@ -244,14 +255,22 @@ export default {
   cursor: pointer;
 }
 
-.add-photo {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  height: 100%;
+.empty-item {
+  width: 227px;
+  height: 213.9px;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) rotateY(0deg) translateZ(180px) !important;
+  overflow: visible;
 }
+
+.a { transform: rotateY(0deg) translateZ(180px); }
+.b { transform: rotateY(60deg) translateZ(180px); }
+.c { transform: rotateY(120deg) translateZ(180px); }
+.d { transform: rotateY(180deg) translateZ(180px); }
+.e { transform: rotateY(240deg) translateZ(180px); }
+.f { transform: rotateY(300deg) translateZ(180px); }
 
 .category-image {
   width: 100%;
@@ -270,34 +289,106 @@ export default {
   border-radius: 5px;
 }
 
-
-/* 回転半径を大きくし、各itemの角度を調整 */
-.a { transform: rotateY(0deg) translateZ(180px); }
-.b { transform: rotateY(60deg) translateZ(180px); }
-.c { transform: rotateY(120deg) translateZ(180px); }
-.d { transform: rotateY(180deg) translateZ(180px); }
-.e { transform: rotateY(240deg) translateZ(180px); }
-.f { transform: rotateY(300deg) translateZ(180px); }
-
-
-
-.category-count {
-  padding-bottom: 15px;
-  position: absolute;
-  font-size: 90.98px;
-  font-weight: 800;
-  z-index: 5;
-  color: rgba(255, 255, 255, 0.9);
-  font-family: "Commissioner", sans-serif;
+.empty-item {
+  width: 227px;
+  height: 213.9px;
+  position: relative;
+  overflow: visible;
 }
 
-.camera-icon {
+.component-child {
   position: absolute;
-  bottom: 15px;
-  right: 15px;
-  width: 35px;
-  height: 28px;
-  cursor: pointer;
+  height: 100%;
+  width: 100%;
+  top: 0%;
+  right: 0%;
+  bottom: 0%;
+  left: 0%;
+  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+  border-radius: 34.63px;
+  background-color: #d3d3d3;
+}
+
+.ui-inner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.div1 {
+  position: absolute;
+  top: 0%;
+  left: 0%;
+  font-weight: 600;
+}
+
+.div {
+  position: absolute;
+  top: 50px;
+  left: 30px;
+  width: 166px;
+  height: 14px;
+  text-align: left;
+}
+
+.p {
+  margin: 0;
+}
+
+.div2 {
+  position: absolute;
+  top: 79px;
+  left: 29px;
+  width: 169px;
+  height: 36px;
+  font-size: 12.27px;
+  color: #686868;
+}
+
+.training1 {
+  position: absolute;
+  top: 0%;
+  left: 0%;
+}
+
+.training {
+  position: absolute;
+  top: 21.55px;
+  left: 82.79px;
+  width: 62px;
+  height: 18px;
+  font-size: 12.31px;
+  color: #5c5c5c;
+}
+
+.ui-child {
+  position: absolute;
+  bottom: 13px;
+  left: 79px;
+  width: 70px;
+  height: 70px;
+}
+
+.add-a-photo-icon {
+  position: absolute;
+  bottom: 26px;
+  left: 91px;
+  width: 41px;
+  height: 41px;
+}
+
+.ui {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background-color: transparent;
+  overflow: hidden;
+  text-align: center;
+  font-size: 9.23px;
+  color: #898a8d;
+  font-family: Poppins;
 }
 
 .timeline-section {
