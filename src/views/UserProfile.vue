@@ -1,18 +1,20 @@
+// UserProfile.vue
 <template>
   <HeaderView />
   <div class="profile-view">
     <!-- プロフィール画像 -->
     <div class="profile-image">
-      <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+      <img v-if="profile.photo" :src="profile.photo" alt="プロフィール写真" class="photo-circle"/>
+      <svg v-else xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
         <circle cx="32" cy="32" r="32" fill="#D9D9D9"/>
       </svg>
     </div>
 
     <!-- ユーザーネーム -->
-    <div class="username">seika_tamukai</div>
+    <div class="username">{{ profile.username }}</div>
 
     <!-- 自己紹介 -->
-    <div class="description">nutsモデルの田向星華です。</div>
+    <div class="description">{{ profile.bio }}</div>
 
     <!-- プロフィールを編集するボタン -->
     <button class="edit-profile" @click="goToEditProfile()">プロフィールを編集する</button>
@@ -20,11 +22,11 @@
     <!-- フォロー・フォロワー -->
     <div class="follow-info">
       <div class="follow" @click="goToHome()">
-        <div class="follow-count">79</div>
+        <div class="follow-count">0</div>
         <div class="follow-text">follow</div>
       </div>
       <div class="follower" @click="goToHome()">
-        <div class="follower-count">25k</div>
+        <div class="follower-count">0</div>
         <div class="follower-text">follower</div>
       </div>
     </div>
@@ -33,7 +35,7 @@
     <div class="content-set">
       <!-- ハッシュタグ -->
       <div class="hashtags">
-        <div class="hashtag">#training</div>
+        <div class="hashtag">#{{ profile.hashtag }}</div>
       </div>
       <div class="content">
         <div class="content-box">80</div>
@@ -46,7 +48,7 @@
     <div class="content-set">
       <!-- ハッシュタグ -->
       <div class="hashtags">
-        <div class="hashtag">#training</div>
+        <div class="hashtag">#{{ profile.hashtag }}</div>
       </div>
       <div class="content">
         <div class="content-box">80</div>
@@ -59,7 +61,7 @@
     <div class="content-set">
       <!-- ハッシュタグ -->
       <div class="hashtags">
-        <div class="hashtag">#training</div>
+        <div class="hashtag">#{{ profile.hashtag }}</div>
       </div>
       <div class="content">
         <div class="content-box">80</div>
@@ -71,48 +73,67 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
+import { useStore } from 'vuex';
+import { computed } from 'vue';
 import HeaderView from './HeaderView.vue';
+import { useRouter } from 'vue-router';
 
 export default {
   components: {
     HeaderView
   },
   name: 'UserProfile',
+  setup() {
+    const store = useStore();
+    const router = useRouter();  // 追加
+    const profile = computed(() => store.state.profile);
+
+    const goToHome = () => {
+      router.push('/');
+    };
+
+    const goToEditProfile = () => {
+      router.push('/EditProfile');
+    };
+
+    return {
+      profile,
+      goToHome,
+      goToEditProfile
+    };
+  },
   data() {
     return {
       startX: 0,
       endX: 0
-    }
-  },
-  computed: {
-    ...mapGetters(['getUsername']),
-    username() {
-      return this.getUsername;
-    }
+    };
   },
   methods: {
-    goToHome() {
-      this.$router.push('/');
-    },
-    goToEditProfile() {
-      this.$router.push('/EditProfile');
-    },
     startTouch(event) {
       this.startX = event.touches[0].clientX;
     },
     moveTouch(event) {
       this.endX = event.touches[0].clientX;
       if (this.startX - this.endX > 50) {
-        // スワイプが左から右へ50px以上移動した場合
         this.goToHome();
       }
     }
   }
-}
+};
 </script>
 
+
 <style scoped>
+
+.photo-circle {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  max-width: 96px;  /* 追加 */
+  max-height: 96px;  /* 追加 */
+}
+
 .profile-view {
   display: flex;
   flex-direction: column;
@@ -136,7 +157,7 @@ export default {
   font-weight: 400;
   line-height: 13px;
   letter-spacing: -0.291px;
-  margin-top: 3px;
+  margin-top: 10px;
 }
 .description {
   color: #FFF;
@@ -146,7 +167,6 @@ export default {
   font-style: normal;
   font-weight: 400;
   line-height: 10px;
-  letter-spacing: -0.291px;
   margin-top: 5px;
 }
 .edit-profile {
@@ -155,7 +175,7 @@ export default {
   flex-shrink: 0;
   border-radius: 20px;
   background: #ECECEC;
-  margin-top: 20px;
+  margin-top: 5px;
   color: #000;
   text-align: center;
   font-family: Chenla;
@@ -163,7 +183,6 @@ export default {
   font-style: normal;
   font-weight: 400;
   line-height: 11.49px;
-  letter-spacing: -0.105px;
 }
 .follow-info {
   display: flex;

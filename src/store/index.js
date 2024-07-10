@@ -4,6 +4,13 @@ import { collection, getDocs, addDoc, onSnapshot } from 'firebase/firestore';
 
 export default createStore({
   state: {
+    profile: {
+      hashtag: '',
+      username: '',
+      bio: '',
+      age: '',
+      photo: ''  // 画像データ用のフィールドを追加
+    },
     user: {
       username: '',
       password: ''
@@ -15,6 +22,12 @@ export default createStore({
     selectedImage: null
   },
   mutations: {
+    updateProfile(state, payload) {
+      state.profile = { ...state.profile, ...payload };
+    },
+    updatePhoto(state, photo) {
+      state.profile.photo = photo;
+    },
     setSelectedImage(state, imageUrl) {
       state.selectedImage = imageUrl
     },
@@ -38,12 +51,8 @@ export default createStore({
     }
   },
   actions: {
-    async registerUser({ commit }, user) {
-      // 仮のユーザー登録ロジック
-      const users = JSON.parse(localStorage.getItem('users')) || [];
-      users.push(user);
-      localStorage.setItem('users', JSON.stringify(users));
-      commit('setUser', user);
+    saveProfile({ commit }, profile) {
+      commit('updateProfile', profile);
     },
     async fetchUploads({ commit }) {
       const querySnapshot = await getDocs(collection(db, 'uploads'));
@@ -72,6 +81,9 @@ export default createStore({
         const users = JSON.parse(localStorage.getItem('users')) || [];
         commit('setIsRegistered', users.length > 0);
       }, 2000); // 2秒後にローディングを終了
+    },
+    savePhoto({ commit }, photo) {
+      commit('updatePhoto', photo);
     }
   },
   getters: {
