@@ -78,15 +78,13 @@ export default defineComponent({
       hashtag: store.state.profile.hashtag || '',
       username: store.state.profile.username || '',
       bio: store.state.profile.bio || '',
-      age: store.state.profile.age || '',
       photo: store.state.profile.photo || ''
     });
 
     const fields = [
       { id: 'hashtag', label: '#', placeholder: '' },
       { id: 'username', label: 'ID', placeholder: '' },
-      { id: 'bio', label: 'profile', placeholder: '' },
-      { id: 'age', label: 'age', placeholder: '' }
+      { id: 'bio', label: 'profile', placeholder: '' }
     ];
 
     const showModal = ref(false);

@@ -4,11 +4,12 @@
     <div class="content">
       <div class="existing-content">
         <b class="date">{{ currentDate }}</b>
-        <div v-for="(category, index) in categories" :key="category.name" class="category" :class="`category-${index + 1}`">
+        <div v-for="(category, index) in [category1, category2]" :key="category.name" class="category" :class="`category-${index + 1}`">
           <div class="category-title">#{{ profile.hashtag || category.name }}</div>
-          <div class="container" ref="container" @touchstart="touchStart" @touchmove="touchMove" @touchend="touchEnd">
-            <div class="carousel" :style="{ transform: `rotateY(${currdeg}deg)` }">
-              <div v-if="!category.items.length" class="item a empty-item" @click="() => onAddPhotoClick(category.name)">
+          <div class="container" @touchstart="touchStart" @touchmove="touchMove" @touchend="(e) => touchEnd(e, category)">
+            <div class="carousel" :style="{ transform: `rotateY(${category.currdeg}deg)` }">
+              <div v-if="!category.items.length" class="item a empty-item" @click="() => addPhotoToCategory(category)">
+                <!-- Empty item content -->
                 <div class="ui">
                   <div class="ui-inner">
                     <div class="component-child" />
@@ -23,14 +24,33 @@
                     </div>
                   </div>
                   <div class="training">
-                    <b class="training1">#{{ category.name }}</b>
+                    <b class="training1">#{{ profile.hashtag || category1.name }}</b>
                   </div>
-                  <img class="ui-child" alt="" src="Ellipse 1365.svg" />
-                  <img class="add-a-photo-icon" alt="" src="add_a_photo.svg" />
+                  <svg class="ui-child" width="106" height="105" viewBox="0 0 106 105" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <g filter="url(#filter0_d_4102_952)">
+      <circle cx="53" cy="47" r="47" fill="#008080"/>
+    </g>
+    <defs>
+      <filter id="filter0_d_4102_952" x="0.628572" y="0" width="104.743" height="104.743" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+        <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+        <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+        <feOffset dy="5.37143"/>
+        <feGaussianBlur stdDeviation="2.68571"/>
+        <feComposite in2="hardAlpha" operator="out"/>
+        <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+        <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_4102_952"/>
+        <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_4102_952" result="shape"/>
+      </filter>
+    </defs>
+                  </svg>
+                  <svg class="add-a-photo-icon" width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M8.14337 19.9566C8.14337 21.2183 9.17569 22.2506 10.4374 22.2506C11.6991 22.2506 12.7315 21.2183 12.7315 19.9566V15.3685H17.3196C18.5813 15.3685 19.6136 14.3361 19.6136 13.0744C19.6136 11.8127 18.5813 10.7804 17.3196 10.7804H12.7315V6.19227C12.7315 4.93055 11.6991 3.89822 10.4374 3.89822C9.17569 3.89822 8.14337 4.93055 8.14337 6.19227V10.7804H3.55528C2.29355 10.7804 1.26123 11.8127 1.26123 13.0744C1.26123 14.3361 2.29355 15.3685 3.55528 15.3685H8.14337V19.9566Z" fill="white"/>
+    <path d="M31.0838 40.603C34.8848 40.603 37.966 37.5217 37.966 33.7208C37.966 29.9199 34.8848 26.8387 31.0838 26.8387C27.2829 26.8387 24.2017 29.9199 24.2017 33.7208C24.2017 37.5217 27.2829 40.603 31.0838 40.603Z" fill="white"/>
+    <path d="M49.4362 15.3685H42.1641L39.3195 12.2715C38.4707 11.3309 37.2319 10.7804 35.9472 10.7804H21.2653C21.6553 11.4686 21.9077 12.2256 21.9077 13.0744C21.9077 15.5979 19.843 17.6625 17.3196 17.6625H15.0255V19.9566C15.0255 22.48 12.9609 24.5447 10.4374 24.5447C9.58862 24.5447 8.83159 24.2923 8.14337 23.9023V47.4851C8.14337 50.0086 10.208 52.0732 12.7315 52.0732H49.4362C51.9597 52.0732 54.0243 50.0086 54.0243 47.4851V19.9566C54.0243 17.4331 51.9597 15.3685 49.4362 15.3685ZM31.0838 45.1911C24.7523 45.1911 19.6136 40.0524 19.6136 33.7208C19.6136 27.3893 24.7523 22.2506 31.0838 22.2506C37.4154 22.2506 42.5541 27.3893 42.5541 33.7208C42.5541 40.0524 37.4154 45.1911 31.0838 45.1911Z" fill="white"/>
+                  </svg>
                 </div>
               </div>
-              <div v-else v-for="(item, i) in getFilteredItems(category)" :key="item.id" 
-                   class="item" :class="getItemClass(i)" @click="() => onAddPhotoClick(category.name)">
+              <div v-else v-for="(item, i) in category.items" :key="item.id" class="item" :class="getItemClass(i)" @click="() => addPhotoToCategory(category)">
                 <img :src="item.imageUrl" alt="Item Photo" class="category-image" />
                 <span class="item-count">{{ item.count }}</span>
               </div>
@@ -38,17 +58,13 @@
           </div>
         </div>
       </div>
-
       <div class="timeline-section">
         <div class="timeline">
-          <div v-for="column in [leftColumnItems, rightColumnItems]" :key="column" class="timeline-column">
-            <TimelineItem
-              v-for="item in column"
-              :key="item.id"
-              :imageUrl="item.imageUrl"
-              :description="item.description"
-              :timestamp="item.timestamp"
-            />
+          <div class="timeline-column">
+            <TimelineItem v-for="item in leftColumnItems" :key="item.id" :imageUrl="item.imageUrl" :description="item.description" :timestamp="item.timestamp" />
+          </div>
+          <div class="timeline-column">
+            <TimelineItem v-for="item in rightColumnItems" :key="item.id" :imageUrl="item.imageUrl" :description="item.description" :timestamp="item.timestamp" />
           </div>
         </div>
       </div>
@@ -59,10 +75,10 @@
 
 <script>
 import { ref, computed } from 'vue';
+import { useStore } from 'vuex';
 import HeaderView from './HeaderView.vue';
 import FooterView from './FooterView.vue';
 import TimelineItem from './TimelineItem.vue';
-import { useStore } from 'vuex';
 
 export default {
   name: 'HomeView',
@@ -74,50 +90,59 @@ export default {
   setup() {
     const store = useStore();
     const profile = computed(() => store.state.profile);
-    const currentDate = ref(new Date().toISOString().split('T')[0].replace(/-/g, '.'));
     
-    const categories = ref([
-      { name: 'training', count: 0, items: [] },
-      { name: 'book', count: 0, items: [] }
-    ]);
+    const currentDate = ref(new Date().toISOString().split('T')[0].replace(/-/g, '.'));
+
+    const category1 = ref({
+      name: 'Category1',
+      count: 0,
+      items: [],
+      currdeg: 0
+    });
+
+    const category2 = ref({
+      name: 'Category2',
+      count: 0,
+      items: [],
+      currdeg: 0
+    });
 
     const timelineItems = ref([]);
 
     const leftColumnItems = computed(() => timelineItems.value.filter((_, index) => index % 2 === 0));
     const rightColumnItems = computed(() => timelineItems.value.filter((_, index) => index % 2 !== 0));
 
-   
+    const addPhotoToCategory = (category) => {
+      category.count += 1;
+      const newItem = {
+        id: timelineItems.value.length + 1,
+        imageUrl: 'path/to/new-image.jpg',
+        description: `New upload for ${category.name}`,
+        timestamp: new Date(),
+        count: category.count
+      };
+      timelineItems.value.unshift(newItem);
+      category.items.unshift(newItem);
+      if (category.items.length > 6) {
+        category.items.pop();
+      }
 
-    const onAddPhotoClick = (categoryName) => {
-      const category = categories.value.find(cat => cat.name === categoryName);
-      if (category) {
-        category.count += 1;
-        const newItem = {
-          id: timelineItems.value.length + 1,
-          imageUrl: 'path/to/new-image.jpg',
-          description: `New upload for ${categoryName}`,
-          timestamp: new Date(),
-          count: category.count
-        };
-        timelineItems.value.unshift(newItem);
-        category.items.unshift(newItem);
-        if (category.items.length > 6) {
-          category.items.pop();
-        }
+      if (category === category2.value) {
+        store.dispatch('addPhotoToSecondContent', newItem);
+      } else {
+        store.dispatch('addPhotoToProfile', newItem);
       }
     };
 
-    const getFilteredItems = (category) => {
-      return category.items;
+    const rotateCarousel = (category, direction) => {
+      if (direction === 'left') {
+        category.currdeg -= 60;
+      } else {
+        category.currdeg += 60;
+      }
     };
 
-    const showPhotoComponent = () => {
-      console.log('Show photo component');
-    };
-
-    const currdeg = ref(0);
     const startX = ref(0);
-    const container = ref(null);
 
     const touchStart = (event) => {
       startX.value = event.touches[0].clientX;
@@ -127,44 +152,40 @@ export default {
       event.preventDefault();
     };
 
-    const touchEnd = (event) => {
+    const touchEnd = (event, category) => {
       const endX = event.changedTouches[0].clientX;
       const diff = startX.value - endX;
-      if (Math.abs(diff) > 50) { // 50pxのしきい値を設定
+      if (Math.abs(diff) > 50) {
         if (diff > 0) {
-          // 左スワイプ
-          currdeg.value -= 60;
+          rotateCarousel(category, 'left');
         } else {
-          // 右スワイプ
-          currdeg.value += 60;
+          rotateCarousel(category, 'right');
         }
       }
     };
 
     const getItemClass = (index) => {
-  const classes = ['a', 'b', 'c', 'd', 'e', 'f'];
-  return classes[index];
-};
+      const classes = ['a', 'b', 'c', 'd', 'e', 'f'];
+      return classes[index];
+    };
 
     return {
       currentDate,
-      categories,
+      category1,
+      category2,
       leftColumnItems,
       rightColumnItems,
-      getFilteredItems,
-      onAddPhotoClick,
-      showPhotoComponent,
-      profile,
-      currdeg,
-      container,
+      addPhotoToCategory,
       touchStart,
       touchMove,
       touchEnd,
       getItemClass,
+      profile,
     };
   }
 };
 </script>
+
 
 <style scoped>
 .top {
@@ -222,8 +243,8 @@ export default {
 
 .container {
   margin: 0 auto;
-  width: 130px;  /* empty-itemの幅に合わせて調整 */
-  height: 213.9px;  /* empty-itemの高さに合わせて調整 */
+  width: 130px;
+  height: 213.9px;
   position: relative;
   perspective: 1500px;
 }
@@ -289,13 +310,6 @@ export default {
   border-radius: 5px;
 }
 
-.empty-item {
-  width: 227px;
-  height: 213.9px;
-  position: relative;
-  overflow: visible;
-}
-
 .component-child {
   position: absolute;
   height: 100%;
@@ -313,7 +327,6 @@ export default {
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
   height: 100%;
 }
 
@@ -347,20 +360,21 @@ export default {
   color: #686868;
 }
 
-.training1 {
-  position: absolute;
-  top: 0%;
-  left: 0%;
-}
-
 .training {
-  position: absolute;
-  top: 21.55px;
-  left: 82.79px;
+  position: relative;
   width: 62px;
   height: 18px;
   font-size: 12.31px;
   color: #5c5c5c;
+  top: 21.55px;
+  left: 82.79px;
+}
+
+.training1 {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .ui-child {
@@ -376,7 +390,7 @@ export default {
   bottom: 26px;
   left: 91px;
   width: 41px;
-  height: 41px;
+  height: 57px;
 }
 
 .ui {

@@ -156,7 +156,7 @@
     position: relative;
     width: 304px;
     height: 57px;
-    margin: 40px auto;
+    margin: 40px 55px 10px 55px;
     cursor: pointer;
   }
   
@@ -202,7 +202,7 @@
     width: 24px;
     height: 24px;
     position: absolute;
-    left: 10px;
+    left: 15px;
     top: 50%;
     transform: translateY(-50%);
     z-index: 1;
@@ -213,9 +213,8 @@
     position: relative;
     border-radius: 29px;
     background-color: #fff;
-    height: 159px;
-    margin: 10px auto 20px;
-    padding: 10px;
+    margin: 0px auto 20px;
+    padding: 0 10px 10px 10px;
   }
   
   .nav-item {
@@ -227,6 +226,7 @@
   
   .nav-item:last-child {
     border-bottom: none;
+    margin-bottom: -40px;
   }
   </style>
   

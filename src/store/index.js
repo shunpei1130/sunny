@@ -9,7 +9,8 @@ export default createStore({
       username: '',
       bio: '',
       age: '',
-      photo: ''  // 画像データ用のフィールドを追加
+      photo: '',
+      profilePhotos: []
     },
     user: {
       username: '',
@@ -19,7 +20,9 @@ export default createStore({
     isLoading: true,
     isRegistered: false,
     agreedToPolicy: false,
-    selectedImage: null
+    selectedImage: null,
+    profilePhotos: [],
+    secondContentPhotos: []
   },
   mutations: {
     updateProfile(state, payload) {
@@ -48,6 +51,18 @@ export default createStore({
     },
     setAgreedToPolicy(state, agreed) {
       state.agreedToPolicy = agreed;
+    },
+    ADD_PHOTO_TO_PROFILE(state, photo) {
+      state.profilePhotos.unshift(photo);
+      if (state.profilePhotos.length > 3) {
+        state.profilePhotos.pop();
+      }
+    },
+    ADD_PHOTO_TO_SECOND_CONTENT(state, photo) {
+      state.secondContentPhotos.unshift(photo);
+      if (state.secondContentPhotos.length > 3) {
+        state.secondContentPhotos.pop();
+      }
     }
   },
   actions: {
@@ -80,17 +95,23 @@ export default createStore({
         commit('setIsLoading', false);
         const users = JSON.parse(localStorage.getItem('users')) || [];
         commit('setIsRegistered', users.length > 0);
-      }, 2000); // 2秒後にローディングを終了
+      }, 2000);
     },
     savePhoto({ commit }, photo) {
       commit('updatePhoto', photo);
+    },
+    addPhotoToProfile({ commit }, photo) {
+      commit('ADD_PHOTO_TO_PROFILE', photo);
+    },
+    addPhotoToSecondContent({ commit }, photo) {
+      commit('ADD_PHOTO_TO_SECOND_CONTENT', photo);
     }
   },
   getters: {
     allUploads: state => state.uploads,
     isLoading: state => state.isLoading,
     isRegistered: state => state.isRegistered,
-    agreedToPolicy: state => state.agreedToPolicy
+    agreedToPolicy: state => state.agreedToPolicy,
+    secondContentPhotos: state => state.secondContentPhotos
   }
 });
-

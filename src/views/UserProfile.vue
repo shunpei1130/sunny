@@ -31,44 +31,50 @@
       </div>
     </div>
 
-    <!-- 画像コンテンツセット1 -->
-    <div class="content-set">
-      <!-- ハッシュタグ -->
+     <!-- 画像コンテンツセット1 -->
+     <div class="content-set">
       <div class="hashtags">
         <div class="hashtag">#{{ profile.hashtag }}</div>
       </div>
       <div class="content">
-        <div class="content-box">80</div>
-        <div class="content-box">+</div>
-        <div class="content-box">+</div>
+        <template v-if="profilePhotos && profilePhotos.length">
+          <div v-for="photo in profilePhotos" :key="photo.id" class="content-box">
+            <img :src="photo.imageUrl" :alt="photo.description" class="content-image" />
+            <div class="content-count">{{ photo.count }}</div>
+          </div>
+          <div v-for="i in (3 - profilePhotos.length)" :key="i" class="content-box">+</div>
+        </template>
+        <template v-else>
+          <div class="content-box">0</div>
+          <div class="content-box">+</div>
+          <div class="content-box">+</div>
+        </template>
       </div>
     </div>
+
 
     <!-- 画像コンテンツ追加セット2 -->
     <div class="content-set">
-      <!-- ハッシュタグ -->
-      <div class="hashtags">
-        <div class="hashtag">#{{ profile.hashtag }}</div>
-      </div>
-      <div class="content">
-        <div class="content-box">80</div>
-        <div class="content-box">+</div>
-        <div class="content-box">+</div>
-      </div>
+    <div class="hashtags">
+      <div class="hashtag">#{{ profile.hashtag }}</div>
     </div>
+    <div class="content">
+      <template v-if="secondContentPhotos && secondContentPhotos.length">
+        <div v-for="photo in secondContentPhotos" :key="photo.id" class="content-box">
+          <img :src="photo.imageUrl" :alt="photo.description" class="content-image" />
+          <div class="content-count">{{ photo.count }}</div>
+        </div>
+        <div v-for="i in (3 - secondContentPhotos.length)" :key="i" class="content-box">+</div>
+      </template>
+      <template v-else>
+        <div class="content-box">0</div>
+        <div class="content-box">+</div>
+        <div class="content-box">+</div>
+      </template>
+    </div>
+  </div>
 
-    <!-- 画像コンテンツ追加セット3 -->
-    <div class="content-set">
-      <!-- ハッシュタグ -->
-      <div class="hashtags">
-        <div class="hashtag">#{{ profile.hashtag }}</div>
-      </div>
-      <div class="content">
-        <div class="content-box">80</div>
-        <div class="content-box">+</div>
-        <div class="content-box">+</div>
-      </div>
-    </div>
+
   </div>
 </template>
 
@@ -85,8 +91,10 @@ export default {
   name: 'UserProfile',
   setup() {
     const store = useStore();
-    const router = useRouter();  // 追加
+    const router = useRouter();
     const profile = computed(() => store.state.profile);
+    const profilePhotos = computed(() => store.state.profilePhotos || []);
+    const secondContentPhotos = computed(() => store.state.secondContentPhotos || []); // 追加
 
     const goToHome = () => {
       router.push('/');
@@ -98,6 +106,8 @@ export default {
 
     return {
       profile,
+      profilePhotos,
+      secondContentPhotos, // 追加
       goToHome,
       goToEditProfile
     };
@@ -231,13 +241,18 @@ export default {
   letter-spacing: -0.239px;
   margin-left: 0px;
 }
+.content-set {
+  width: 100%;
+}
+
 .content {
   display: flex;
   justify-content: center;
+  gap: 5px;
   width: 100%;
   margin-top: 3px;
-  gap: 5px;
 }
+
 .content-box {
   width: 120px;
   height: 162.5px;
@@ -254,5 +269,23 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.content-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.content-count {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  font-size: 24px;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 5px 10px;
+  border-radius: 5px;
 }
 </style>
