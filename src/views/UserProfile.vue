@@ -1,4 +1,3 @@
-// UserProfile.vue
 <template>
   <HeaderView />
   <div class="profile-view">
@@ -31,8 +30,8 @@
       </div>
     </div>
 
-     <!-- 画像コンテンツセット1 -->
-     <div class="content-set">
+    <!-- 画像コンテンツセット1 -->
+    <div class="content-set">
       <div class="hashtags">
         <div class="hashtag">#{{ profile.hashtag }}</div>
       </div>
@@ -52,28 +51,26 @@
       </div>
     </div>
 
-
     <!-- 画像コンテンツ追加セット2 -->
     <div class="content-set">
-    <div class="hashtags">
-      <div class="hashtag">#{{ profile.hashtag }}</div>
+      <div class="hashtags">
+        <div class="hashtag">#{{ profile.hashtag }}</div>
+      </div>
+      <div class="content">
+        <template v-if="secondContentPhotos && secondContentPhotos.length">
+          <div v-for="photo in secondContentPhotos" :key="photo.id" class="content-box">
+            <img :src="photo.imageUrl" :alt="photo.description" class="content-image" />
+            <div class="content-count">{{ photo.count }}</div>
+          </div>
+          <div v-for="i in (3 - secondContentPhotos.length)" :key="i" class="content-box">+</div>
+        </template>
+        <template v-else>
+          <div class="content-box">0</div>
+          <div class="content-box">+</div>
+          <div class="content-box">+</div>
+        </template>
+      </div>
     </div>
-    <div class="content">
-      <template v-if="secondContentPhotos && secondContentPhotos.length">
-        <div v-for="photo in secondContentPhotos" :key="photo.id" class="content-box">
-          <img :src="photo.imageUrl" :alt="photo.description" class="content-image" />
-          <div class="content-count">{{ photo.count }}</div>
-        </div>
-        <div v-for="i in (3 - secondContentPhotos.length)" :key="i" class="content-box">+</div>
-      </template>
-      <template v-else>
-        <div class="content-box">0</div>
-        <div class="content-box">+</div>
-        <div class="content-box">+</div>
-      </template>
-    </div>
-  </div>
-
 
   </div>
 </template>
@@ -93,8 +90,8 @@ export default {
     const store = useStore();
     const router = useRouter();
     const profile = computed(() => store.state.profile);
-    const profilePhotos = computed(() => store.state.profilePhotos || []);
-    const secondContentPhotos = computed(() => store.state.secondContentPhotos || []); // 追加
+    const profilePhotos = computed(() => store.state.profile.profilePhotos || []);
+    const secondContentPhotos = computed(() => store.state.profile.secondContentPhotos || []);
 
     const goToHome = () => {
       router.push('/');
@@ -107,30 +104,14 @@ export default {
     return {
       profile,
       profilePhotos,
-      secondContentPhotos, // 追加
+      secondContentPhotos,
       goToHome,
       goToEditProfile
     };
-  },
-  data() {
-    return {
-      startX: 0,
-      endX: 0
-    };
-  },
-  methods: {
-    startTouch(event) {
-      this.startX = event.touches[0].clientX;
-    },
-    moveTouch(event) {
-      this.endX = event.touches[0].clientX;
-      if (this.startX - this.endX > 50) {
-        this.goToHome();
-      }
-    }
   }
 };
 </script>
+
 
 
 <style scoped>

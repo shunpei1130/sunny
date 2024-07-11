@@ -42,8 +42,8 @@
                         <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_4102_952" result="shape"/>
                       </filter>
                     </defs>
-                                  </svg>
-                                  <svg class="add-a-photo-icon" width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  </svg>
+                  <svg class="add-a-photo-icon" width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M8.14337 19.9566C8.14337 21.2183 9.17569 22.2506 10.4374 22.2506C11.6991 22.2506 12.7315 21.2183 12.7315 19.9566V15.3685H17.3196C18.5813 15.3685 19.6136 14.3361 19.6136 13.0744C19.6136 11.8127 18.5813 10.7804 17.3196 10.7804H12.7315V6.19227C12.7315 4.93055 11.6991 3.89822 10.4374 3.89822C9.17569 3.89822 8.14337 4.93055 8.14337 6.19227V10.7804H3.55528C2.29355 10.7804 1.26123 11.8127 1.26123 13.0744C1.26123 14.3361 2.29355 15.3685 3.55528 15.3685H8.14337V19.9566Z" fill="white"/>
                     <path d="M31.0838 40.603C34.8848 40.603 37.966 37.5217 37.966 33.7208C37.966 29.9199 34.8848 26.8387 31.0838 26.8387C27.2829 26.8387 24.2017 29.9199 24.2017 33.7208C24.2017 37.5217 27.2829 40.603 31.0838 40.603Z" fill="white"/>
                     <path d="M49.4362 15.3685H42.1641L39.3195 12.2715C38.4707 11.3309 37.2319 10.7804 35.9472 10.7804H21.2653C21.6553 11.4686 21.9077 12.2256 21.9077 13.0744C21.9077 15.5979 19.843 17.6625 17.3196 17.6625H15.0255V19.9566C15.0255 22.48 12.9609 24.5447 10.4374 24.5447C9.58862 24.5447 8.83159 24.2923 8.14337 23.9023V47.4851C8.14337 50.0086 10.208 52.0732 12.7315 52.0732H49.4362C51.9597 52.0732 54.0243 50.0086 54.0243 47.4851V19.9566C54.0243 17.4331 51.9597 15.3685 49.4362 15.3685ZM31.0838 45.1911C24.7523 45.1911 19.6136 40.0524 19.6136 33.7208C19.6136 27.3893 24.7523 22.2506 31.0838 22.2506C37.4154 22.2506 42.5541 27.3893 42.5541 33.7208C42.5541 40.0524 37.4154 45.1911 31.0838 45.1911Z" fill="white"/>
@@ -74,7 +74,7 @@
 </template>
 
 <script>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useStore } from 'vuex';
 import HeaderView from './HeaderView.vue';
 import FooterView from './FooterView.vue';
@@ -90,24 +90,26 @@ export default {
   setup() {
     const store = useStore();
     const profile = computed(() => store.state.profile);
-    
+    const timelineItems = computed(() => store.state.timelineItems);
+    const category1 = computed(() => store.state.category1);
+    const category2 = computed(() => store.state.category2);
+
     const currentDate = ref(new Date().toISOString().split('T')[0].replace(/-/g, '.'));
 
-    const category1 = ref({
-      name: 'Category1',
-      count: 0,
-      items: [],
-      currdeg: 0
+    onMounted(() => {
+      // 保存されたタイムラインアイテムとカテゴリの状態を取得
+      store.dispatch('saveTimelineItems', timelineItems.value);
+      store.dispatch('saveCategory1', category1.value);
+      store.dispatch('saveCategory2', category2.value);
     });
 
-    const category2 = ref({
-      name: 'Category2',
-      count: 0,
-      items: [],
-      currdeg: 0
-    });
+    watch(category1, (newCategory) => {
+      store.dispatch('saveCategory1', newCategory);
+    }, { deep: true });
 
-    const timelineItems = ref([]);
+    watch(category2, (newCategory) => {
+      store.dispatch('saveCategory2', newCategory);
+    }, { deep: true });
 
     const leftColumnItems = computed(() => timelineItems.value.filter((_, index) => index % 2 === 0));
     const rightColumnItems = computed(() => timelineItems.value.filter((_, index) => index % 2 !== 0));
@@ -121,16 +123,17 @@ export default {
         timestamp: new Date(),
         count: category.count
       };
-      timelineItems.value.unshift(newItem);
+      store.dispatch('addTimelineItem', newItem); // タイムラインアイテムを保存
+
       category.items.unshift(newItem);
       if (category.items.length > 6) {
         category.items.pop();
       }
 
-      if (category === category2.value) {
-        store.dispatch('addPhotoToSecondContent', newItem);
+      if (category.name === 'Category2') {
+        store.dispatch('savePhoto', { photo: newItem, type: 'secondContent' });
       } else {
-        store.dispatch('addPhotoToProfile', newItem);
+        store.dispatch('savePhoto', { photo: newItem, type: 'profile' });
       }
     };
 
@@ -185,7 +188,6 @@ export default {
   }
 };
 </script>
-
 
 <style scoped>
 .top {
@@ -343,11 +345,11 @@ export default {
   left: 30px;
   width: 166px;
   height: 14px;
-  text-align: left;
 }
 
 .p {
   margin: 0;
+  font-size: 12px;
 }
 
 .div2 {
@@ -400,7 +402,7 @@ export default {
   background-color: transparent;
   overflow: hidden;
   text-align: center;
-  font-size: 9.23px;
+  font-size: 9px;
   color: #898a8d;
   font-family: Poppins;
 }

@@ -10,7 +10,8 @@ export default createStore({
       bio: '',
       age: '',
       photo: '',
-      profilePhotos: []
+      profilePhotos: [],
+      secondContentPhotos: [],
     },
     user: {
       username: '',
@@ -21,15 +22,23 @@ export default createStore({
     isRegistered: false,
     agreedToPolicy: false,
     selectedImage: null,
-    profilePhotos: [],
-    secondContentPhotos: []
+    timelineItems: [],
+    category1: {  // 追加
+      name: 'Category1',
+      count: 0,
+      items: [],
+      currdeg: 0
+    },
+    category2: {  // 追加
+      name: 'Category2',
+      count: 0,
+      items: [],
+      currdeg: 0
+    }
   },
   mutations: {
     updateProfile(state, payload) {
       state.profile = { ...state.profile, ...payload };
-    },
-    updatePhoto(state, photo) {
-      state.profile.photo = photo;
     },
     setSelectedImage(state, imageUrl) {
       state.selectedImage = imageUrl
@@ -52,17 +61,17 @@ export default createStore({
     setAgreedToPolicy(state, agreed) {
       state.agreedToPolicy = agreed;
     },
-    ADD_PHOTO_TO_PROFILE(state, photo) {
-      state.profilePhotos.unshift(photo);
-      if (state.profilePhotos.length > 3) {
-        state.profilePhotos.pop();
-      }
+    setTimelineItems(state, items) {
+      state.timelineItems = items;
     },
-    ADD_PHOTO_TO_SECOND_CONTENT(state, photo) {
-      state.secondContentPhotos.unshift(photo);
-      if (state.secondContentPhotos.length > 3) {
-        state.secondContentPhotos.pop();
-      }
+    addTimelineItem(state, item) {
+      state.timelineItems.unshift(item);
+    },
+    setCategory1(state, category) {  // 追加
+      state.category1 = category;
+    },
+    setCategory2(state, category) {  // 追加
+      state.category2 = category;
     }
   },
   actions: {
@@ -97,21 +106,26 @@ export default createStore({
         commit('setIsRegistered', users.length > 0);
       }, 2000);
     },
-    savePhoto({ commit }, photo) {
-      commit('updatePhoto', photo);
+    savePhoto({ commit, state }, { photo, type }) {
+      if (type === 'profile') {
+        const updatedPhotos = [photo, ...state.profile.profilePhotos].slice(0, 3);
+        commit('updateProfile', { profilePhotos: updatedPhotos });
+      } else if (type === 'secondContent') {
+        const updatedPhotos = [photo, ...state.profile.secondContentPhotos].slice(0, 3);
+        commit('updateProfile', { secondContentPhotos: updatedPhotos });
+      }
     },
-    addPhotoToProfile({ commit }, photo) {
-      commit('ADD_PHOTO_TO_PROFILE', photo);
+    saveTimelineItems({ commit }, items) {
+      commit('setTimelineItems', items);
     },
-    addPhotoToSecondContent({ commit }, photo) {
-      commit('ADD_PHOTO_TO_SECOND_CONTENT', photo);
+    addTimelineItem({ commit }, item) {
+      commit('addTimelineItem', item);
+    },
+    saveCategory1({ commit }, category) {  // 追加
+      commit('setCategory1', category);
+    },
+    saveCategory2({ commit }, category) {  // 追加
+      commit('setCategory2', category);
     }
-  },
-  getters: {
-    allUploads: state => state.uploads,
-    isLoading: state => state.isLoading,
-    isRegistered: state => state.isRegistered,
-    agreedToPolicy: state => state.agreedToPolicy,
-    secondContentPhotos: state => state.secondContentPhotos
   }
 });
