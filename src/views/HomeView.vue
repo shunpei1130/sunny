@@ -6,7 +6,7 @@
         <b class="date">{{ currentDate }}</b>
         <div v-for="(category, index) in [category1, category2]" :key="category.name" class="category" :class="`category-${index + 1}`">
           <div class="category-title">#{{ profile.hashtag || category.name }}</div>
-          <div class="container" @touchstart="touchStart" @touchmove="touchMove" @touchend="(e) => touchEnd(e, category)">
+          <div class="container" ref="categoryContainer" @touchstart="touchStart" @touchmove="touchMove" @touchend="(e) => touchEnd(e, category)">
             <div class="carousel" :style="{ transform: `rotateY(${category.currdeg}deg)` }">
               <div v-if="!category.items.length" class="item a empty-item" @click="() => addPhotoToCategory(category)">
                 <!-- Empty item content -->
@@ -146,20 +146,29 @@ export default {
     };
 
     const startX = ref(0);
+    const startY = ref(0);
 
     const touchStart = (event) => {
       startX.value = event.touches[0].clientX;
+      startY.value = event.touches[0].clientY;
     };
 
     const touchMove = (event) => {
-      event.preventDefault();
+      const diffX = event.touches[0].clientX - startX.value;
+      const diffY = event.touches[0].clientY - startY.value;
+      if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
+        event.preventDefault();
+      }
     };
 
     const touchEnd = (event, category) => {
       const endX = event.changedTouches[0].clientX;
-      const diff = startX.value - endX;
-      if (Math.abs(diff) > 50) {
-        if (diff > 0) {
+      const endY = event.changedTouches[0].clientY;
+      const diffX = startX.value - endX;
+      const diffY = startY.value - endY;
+
+      if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
+        if (diffX > 0) {
           rotateCarousel(category, 'left');
         } else {
           rotateCarousel(category, 'right');
@@ -183,7 +192,7 @@ export default {
       touchMove,
       touchEnd,
       getItemClass,
-      profile,
+      profile
     };
   }
 };
@@ -333,7 +342,6 @@ export default {
 }
 
 .div1 {
-  position: absolute;
   top: 0%;
   left: 0%;
   font-weight: 600;
@@ -345,11 +353,12 @@ export default {
   left: 30px;
   width: 166px;
   height: 14px;
+  text-align: left;
 }
 
 .p {
   margin: 0;
-  font-size: 12px;
+  font-size: 9px;
 }
 
 .div2 {
