@@ -265,7 +265,7 @@ export default {
   width: 100%;
   position: absolute;
   transform-style: preserve-3d;
-  transition: transform 0.5s;
+  transition: transform 0.3s;
 }
 
 .item {
