@@ -5,8 +5,8 @@
       <div class="existing-content">
         <b class="date">{{ currentDate }}</b>
         <div v-for="(category, index) in [category1, category2]" :key="category.name" class="category" :class="`category-${index + 1}`">
-          <div class="category-title">#{{ getCategoryName(index + 1) }}</div>
-          <div class="container" ref="categoryContainer" @touchstart="touchStart" @touchmove="touchMove" @touchend="(e) => touchEnd(e, category, index + 1)">
+          <div class="category-title">#{{ profile.hashtag || category.name }}</div>
+          <div class="container" ref="categoryContainer" @touchstart="touchStart" @touchmove="touchMove" @touchend="(e) => touchEnd(e, category)">
             <div class="carousel" :style="{ transform: `rotateY(${category.currdeg}deg)` }">
               <div v-if="!category.items.length" class="item a empty-item" @click="() => addPhotoToCategory(category, index + 1)">
                 <!-- Empty item content -->
@@ -91,15 +91,8 @@ export default {
     const store = useStore();
     const profile = computed(() => store.state.profile);
     const timelineItems = computed(() => store.state.timelineItems);
-    const category1 = computed(() => ({
-      ...store.state.category1,
-      name: profile.value.hashtag1 || 'Category1'
-    }));
-
-    const category2 = computed(() => ({
-      ...store.state.category2,
-      name: profile.value.hashtag2 || 'Category2'
-    }));
+    const category1 = computed(() => store.state.category1);
+    const category2 = computed(() => store.state.category2);
 
     const currentDate = computed(() => new Date().toISOString().split('T')[0].replace(/-/g, '.'));
 
@@ -180,8 +173,7 @@ export default {
       touchMove,
       touchEnd,
       getItemClass,
-      getCategoryName,
-      profile,
+      profile
     };
   }
 };

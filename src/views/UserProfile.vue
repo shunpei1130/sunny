@@ -114,6 +114,7 @@ export default {
 
 
 
+
 <style scoped>
 
 .photo-circle {
@@ -209,7 +210,7 @@ export default {
 }
 .hashtags {
   margin-top: 30px;
-  text-align: left;
+  text-align: center;
   width: 100%;
 }
 .hashtag {
