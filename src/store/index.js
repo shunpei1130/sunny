@@ -167,6 +167,9 @@ export default createStore({
   getters: {
     getCategoryName: (state) => (categoryNumber) => {
       return state[`category${categoryNumber}`].name;
-    }
+    },
+    getProfilePhotos: (state) => state.profile.profilePhotos,
+    getSecondContentPhotos: (state) => state.profile.secondContentPhotos
   }
+  
 });
