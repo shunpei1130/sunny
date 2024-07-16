@@ -24,7 +24,7 @@
                     </div>
                   </div>
                   <div class="training">
-                    <b class="training1">#{{ getCategoryName(index + 1) }}</b>
+                    <b class="training1">#{{ profile.hashtag || category.name }}</b>
                   </div>
                   <svg class="ui-child" width="106" height="105" viewBox="0 0 106 105" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <g filter="url(#filter0_d_4102_952)">
@@ -90,33 +90,21 @@ export default {
   setup() {
     const store = useStore();
     const profile = computed(() => store.state.profile);
-    const timelineItems = computed(() => store.state.timelineItems);
     const category1 = computed(() => store.state.category1);
     const category2 = computed(() => store.state.category2);
-
+    const timelineItems = computed(() => store.state.timelineItems);
     const currentDate = computed(() => new Date().toISOString().split('T')[0].replace(/-/g, '.'));
-
-    const getCategoryName = (categoryNumber) => {
-      return store.getters.getCategoryName(categoryNumber);
-    };
 
     const addPhotoToCategory = (category, categoryNumber) => {
       const newItem = {
         id: Date.now(),
         imageUrl: 'path/to/new-image.jpg',
         description: `New upload for ${category.name}`,
-        timestamp: new Date(),
-        count: category.items.length + 1
+        timestamp: new Date()
       };
 
       store.dispatch('addItemToCategory', { categoryNumber, item: newItem });
-      store.dispatch('addTimelineItem', newItem);
-
-      if (categoryNumber === 2) {
-        store.dispatch('savePhoto', { photo: newItem, type: 'secondContent' });
-      } else {
-        store.dispatch('savePhoto', { photo: newItem, type: 'profile' });
-      }
+      store.commit('ADD_TIMELINE_ITEM', newItem);
     };
 
     const rotateCarousel = (category, direction) => {
@@ -125,27 +113,49 @@ export default {
       } else {
         category.currdeg += 60;
       }
-      store.dispatch('updateCategoryRotation', { 
-        categoryNumber: category === category2.value ? 2 : 1, 
-        currdeg: category.currdeg 
+      store.dispatch('updateCategoryRotation', {
+        categoryNumber: category === category2.value ? 2 : 1,
+        currdeg: category.currdeg
       });
     };
 
     const startX = ref(0);
+    const startY = ref(0);
+    const isHorizontalScroll = ref(false);
 
     const touchStart = (event) => {
       startX.value = event.touches[0].clientX;
+      startY.value = event.touches[0].clientY;
+      isHorizontalScroll.value = false;
     };
 
     const touchMove = (event) => {
+      const currentX = event.touches[0].clientX;
+      const currentY = event.touches[0].clientY;
+      const diffX = startX.value - currentX;
+      const diffY = startY.value - currentY;
+
+      if (!isHorizontalScroll.value) {
+        isHorizontalScroll.value = Math.abs(diffX) > Math.abs(diffY);
+      }
+
+      if (!isHorizontalScroll.value) {
+        return;
+      }
+
       event.preventDefault();
     };
 
     const touchEnd = (event, category) => {
+      if (!isHorizontalScroll.value) {
+        return;
+      }
+
       const endX = event.changedTouches[0].clientX;
-      const diff = startX.value - endX;
-      if (Math.abs(diff) > 50) {
-        if (diff > 0) {
+      const diffX = startX.value - endX;
+
+      if (Math.abs(diffX) > 50) {
+        if (diffX > 0) {
           rotateCarousel(category, 'left');
         } else {
           rotateCarousel(category, 'right');
@@ -155,14 +165,14 @@ export default {
 
     const getItemClass = (index) => {
       const classes = ['a', 'b', 'c', 'd', 'e', 'f'];
-      return classes[index];
+      return classes[index % classes.length];
     };
-    
 
     const leftColumnItems = computed(() => timelineItems.value.filter((_, index) => index % 2 === 0));
     const rightColumnItems = computed(() => timelineItems.value.filter((_, index) => index % 2 !== 0));
 
     return {
+      profile,
       currentDate,
       category1,
       category2,
@@ -172,12 +182,14 @@ export default {
       touchStart,
       touchMove,
       touchEnd,
-      getItemClass,
-      profile
+      getItemClass
     };
   }
 };
 </script>
+
+
+
 
 
 

@@ -26,16 +26,15 @@ export default createStore({
     timelineItems: [],
     category1: {
       name: 'Category1',
-      count: 0,
       items: [],
       currdeg: 0
     },
     category2: {
       name: 'Category2',
-      count: 0,
       items: [],
       currdeg: 0
-    }
+    },
+    globalCount: 0 // グローバルカウントの追加
   },
   mutations: {
     updateProfile(state, payload) {
@@ -70,11 +69,33 @@ export default createStore({
     setTimelineItems(state, items) {
       state.timelineItems = items;
     },
-    addTimelineItem(state, item) {
-      state.timelineItems.unshift(item);
-    },
+    
     setCategory(state, { categoryNumber, category }) {
       state[`category${categoryNumber}`] = category;
+    },
+    ADD_ITEM_TO_CATEGORY(state, { categoryNumber, item }) {
+      const category = categoryNumber === 1 ? state.category1 : state.category2;
+
+      // カウントを更新
+      item.count = state.globalCount + 1;
+      state.globalCount += 1;
+
+      // 6枚以上の場合は最も古いアイテムを削除
+      if (category.items.length >= 6) {
+        category.items.shift();
+      }
+
+      category.items.push(item);
+    },
+    ADD_TIMELINE_ITEM(state, item) {
+      state.timelineItems.unshift(item);
+    },
+    UPDATE_CATEGORY_ROTATION(state, { categoryNumber, currdeg }) {
+      if (categoryNumber === 1) {
+        state.category1.currdeg = currdeg;
+      } else if (categoryNumber === 2) {
+        state.category2.currdeg = currdeg;
+      }
     }
   },
   actions: {
@@ -131,10 +152,16 @@ export default createStore({
       commit('setTimelineItems', items);
     },
     addTimelineItem({ commit }, item) {
-      commit('addTimelineItem', item);
+      commit('ADD_TIMELINE_ITEM', item);
     },
     saveCategory({ commit }, { categoryNumber, category }) {
       commit('setCategory', { categoryNumber, category });
+    },
+    addItemToCategory({ commit }, payload) {
+      commit('ADD_ITEM_TO_CATEGORY', payload);
+    },
+    updateCategoryRotation({ commit }, payload) {
+      commit('UPDATE_CATEGORY_ROTATION', payload);
     }
   },
   getters: {
