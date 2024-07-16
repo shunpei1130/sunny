@@ -5,10 +5,10 @@
       <div class="existing-content">
         <b class="date">{{ currentDate }}</b>
         <div v-for="(category, index) in [category1, category2]" :key="category.name" class="category" :class="`category-${index + 1}`">
-          <div class="category-title">#{{ profile.hashtag || category.name }}</div>
-          <div class="container" ref="categoryContainer" @touchstart="touchStart" @touchmove="touchMove" @touchend="(e) => touchEnd(e, category)">
+          <div class="category-title">#{{ getCategoryName(index + 1) }}</div>
+          <div class="container" ref="categoryContainer" @touchstart="touchStart" @touchmove="touchMove" @touchend="(e) => touchEnd(e, category, index + 1)">
             <div class="carousel" :style="{ transform: `rotateY(${category.currdeg}deg)` }">
-              <div v-if="!category.items.length" class="item a empty-item" @click="() => addPhotoToCategory(category)">
+              <div v-if="!category.items.length" class="item a empty-item" @click="() => addPhotoToCategory(category, index + 1)">
                 <!-- Empty item content -->
                 <div class="ui">
                   <div class="ui-inner">
@@ -24,7 +24,7 @@
                     </div>
                   </div>
                   <div class="training">
-                    <b class="training1">#{{ profile.hashtag || category1.name }}</b>
+                    <b class="training1">#{{ getCategoryName(index + 1) }}</b>
                   </div>
                   <svg class="ui-child" width="106" height="105" viewBox="0 0 106 105" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <g filter="url(#filter0_d_4102_952)">
@@ -50,7 +50,7 @@
                   </svg>
                 </div>
               </div>
-              <div v-else v-for="(item, i) in category.items" :key="item.id" class="item" :class="getItemClass(i)" @click="() => addPhotoToCategory(category)">
+              <div v-else v-for="(item, i) in category.items" :key="item.id" class="item" :class="getItemClass(i)" @click="() => addPhotoToCategory(category, index + 1)">
                 <img :src="item.imageUrl" alt="Item Photo" class="category-image" />
                 <span class="item-count">{{ item.count }}</span>
               </div>
@@ -74,7 +74,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, watch } from 'vue';
+import { computed, ref } from 'vue';
 import { useStore } from 'vuex';
 import HeaderView from './HeaderView.vue';
 import FooterView from './FooterView.vue';
@@ -91,46 +91,35 @@ export default {
     const store = useStore();
     const profile = computed(() => store.state.profile);
     const timelineItems = computed(() => store.state.timelineItems);
-    const category1 = computed(() => store.state.category1);
-    const category2 = computed(() => store.state.category2);
+    const category1 = computed(() => ({
+      ...store.state.category1,
+      name: profile.value.hashtag1 || 'Category1'
+    }));
 
-    const currentDate = ref(new Date().toISOString().split('T')[0].replace(/-/g, '.'));
+    const category2 = computed(() => ({
+      ...store.state.category2,
+      name: profile.value.hashtag2 || 'Category2'
+    }));
 
-    onMounted(() => {
-      // 保存されたタイムラインアイテムとカテゴリの状態を取得
-      store.dispatch('saveTimelineItems', timelineItems.value);
-      store.dispatch('saveCategory1', category1.value);
-      store.dispatch('saveCategory2', category2.value);
-    });
+    const currentDate = computed(() => new Date().toISOString().split('T')[0].replace(/-/g, '.'));
 
-    watch(category1, (newCategory) => {
-      store.dispatch('saveCategory1', newCategory);
-    }, { deep: true });
+    const getCategoryName = (categoryNumber) => {
+      return store.getters.getCategoryName(categoryNumber);
+    };
 
-    watch(category2, (newCategory) => {
-      store.dispatch('saveCategory2', newCategory);
-    }, { deep: true });
-
-    const leftColumnItems = computed(() => timelineItems.value.filter((_, index) => index % 2 === 0));
-    const rightColumnItems = computed(() => timelineItems.value.filter((_, index) => index % 2 !== 0));
-
-    const addPhotoToCategory = (category) => {
-      category.count += 1;
+    const addPhotoToCategory = (category, categoryNumber) => {
       const newItem = {
-        id: timelineItems.value.length + 1,
+        id: Date.now(),
         imageUrl: 'path/to/new-image.jpg',
         description: `New upload for ${category.name}`,
         timestamp: new Date(),
-        count: category.count
+        count: category.items.length + 1
       };
-      store.dispatch('addTimelineItem', newItem); // タイムラインアイテムを保存
 
-      category.items.unshift(newItem);
-      if (category.items.length > 6) {
-        category.items.pop();
-      }
+      store.dispatch('addItemToCategory', { categoryNumber, item: newItem });
+      store.dispatch('addTimelineItem', newItem);
 
-      if (category.name === 'Category2') {
+      if (categoryNumber === 2) {
         store.dispatch('savePhoto', { photo: newItem, type: 'secondContent' });
       } else {
         store.dispatch('savePhoto', { photo: newItem, type: 'profile' });
@@ -143,32 +132,27 @@ export default {
       } else {
         category.currdeg += 60;
       }
+      store.dispatch('updateCategoryRotation', { 
+        categoryNumber: category === category2.value ? 2 : 1, 
+        currdeg: category.currdeg 
+      });
     };
 
     const startX = ref(0);
-    const startY = ref(0);
 
     const touchStart = (event) => {
       startX.value = event.touches[0].clientX;
-      startY.value = event.touches[0].clientY;
     };
 
     const touchMove = (event) => {
-      const diffX = event.touches[0].clientX - startX.value;
-      const diffY = event.touches[0].clientY - startY.value;
-      if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
-        event.preventDefault();
-      }
+      event.preventDefault();
     };
 
     const touchEnd = (event, category) => {
       const endX = event.changedTouches[0].clientX;
-      const endY = event.changedTouches[0].clientY;
-      const diffX = startX.value - endX;
-      const diffY = startY.value - endY;
-
-      if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
-        if (diffX > 0) {
+      const diff = startX.value - endX;
+      if (Math.abs(diff) > 50) {
+        if (diff > 0) {
           rotateCarousel(category, 'left');
         } else {
           rotateCarousel(category, 'right');
@@ -180,6 +164,10 @@ export default {
       const classes = ['a', 'b', 'c', 'd', 'e', 'f'];
       return classes[index];
     };
+    
+
+    const leftColumnItems = computed(() => timelineItems.value.filter((_, index) => index % 2 === 0));
+    const rightColumnItems = computed(() => timelineItems.value.filter((_, index) => index % 2 !== 0));
 
     return {
       currentDate,
@@ -192,11 +180,14 @@ export default {
       touchMove,
       touchEnd,
       getItemClass,
-      profile
+      getCategoryName,
+      profile,
     };
   }
 };
 </script>
+
+
 
 <style scoped>
 .top {

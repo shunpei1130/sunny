@@ -33,7 +33,7 @@
     <!-- 画像コンテンツセット1 -->
     <div class="content-set">
       <div class="hashtags">
-        <div class="hashtag">#{{ profile.hashtag }}</div>
+        <div class="hashtag">#{{ profile.hashtag1 }}</div>
       </div>
       <div class="content">
         <template v-if="profilePhotos && profilePhotos.length">
@@ -54,7 +54,7 @@
     <!-- 画像コンテンツ追加セット2 -->
     <div class="content-set">
       <div class="hashtags">
-        <div class="hashtag">#{{ profile.hashtag }}</div>
+        <div class="hashtag">#{{ profile.hashtag2 }}</div>
       </div>
       <div class="content">
         <template v-if="secondContentPhotos && secondContentPhotos.length">

@@ -75,14 +75,16 @@ export default defineComponent({
     const fileInput = ref(null);
     const modalInput = ref(null);
     const editProfile = reactive({
-      hashtag: store.state.profile.hashtag || '',
+      hashtag1: store.state.profile.hashtag1 || '',
+      hashtag2: store.state.profile.hashtag2 || '',
       username: store.state.profile.username || '',
       bio: store.state.profile.bio || '',
       photo: store.state.profile.photo || ''
     });
 
     const fields = [
-      { id: 'hashtag', label: '#', placeholder: '' },
+      { id: 'hashtag1', label: '#1', placeholder: '1つ目のハッシュタグ' },
+      { id: 'hashtag2', label: '#2', placeholder: '2つ目のハッシュタグ' },
       { id: 'username', label: 'ID', placeholder: '' },
       { id: 'bio', label: 'profile', placeholder: '' }
     ];
@@ -119,13 +121,16 @@ export default defineComponent({
 
     const saveProfile = () => {
       console.log('保存されたプロフィール:', editProfile);
-      store.dispatch('saveProfile', editProfile);
+      store.dispatch('saveProfile', {
+        hashtag1: editProfile.hashtag1,
+        hashtag2: editProfile.hashtag2,
+        username: editProfile.username,
+        bio: editProfile.bio,
+        photo: editProfile.photo
+      });
       router.push('/profile');
     };
 
-    const goHome = () => {
-      router.push('/');
-    };
     const goProfile = () => {
       router.push('/Profile');
     };
@@ -142,12 +147,13 @@ export default defineComponent({
       onFileChange,
       fileInput,
       modalInput,
-      goHome,
       goProfile
     };
   }
 });
 </script>
+
+
 
 <style scoped>
 .edit-profile {
