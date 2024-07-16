@@ -5,7 +5,8 @@ import { collection, getDocs, addDoc, onSnapshot } from 'firebase/firestore';
 export default createStore({
   state: {
     profile: {
-      hashtag: '',
+      hashtag1: '',
+      hashtag2: '',
       username: '',
       bio: '',
       age: '',
@@ -23,13 +24,13 @@ export default createStore({
     agreedToPolicy: false,
     selectedImage: null,
     timelineItems: [],
-    category1: {  // 追加
+    category1: {
       name: 'Category1',
       count: 0,
       items: [],
       currdeg: 0
     },
-    category2: {  // 追加
+    category2: {
       name: 'Category2',
       count: 0,
       items: [],
@@ -38,7 +39,12 @@ export default createStore({
   },
   mutations: {
     updateProfile(state, payload) {
-      state.profile = { ...state.profile, ...payload };
+      Object.keys(payload).forEach(key => {
+        state.profile[key] = payload[key];
+      });
+    },
+    updateCategoryName(state, { categoryNumber, name }) {
+      state[`category${categoryNumber}`].name = name;
     },
     setSelectedImage(state, imageUrl) {
       state.selectedImage = imageUrl
@@ -67,16 +73,22 @@ export default createStore({
     addTimelineItem(state, item) {
       state.timelineItems.unshift(item);
     },
-    setCategory1(state, category) {  // 追加
-      state.category1 = category;
-    },
-    setCategory2(state, category) {  // 追加
-      state.category2 = category;
+    setCategory(state, { categoryNumber, category }) {
+      state[`category${categoryNumber}`] = category;
     }
   },
   actions: {
-    saveProfile({ commit }, profile) {
+    saveProfile({ commit, dispatch }, profile) {
       commit('updateProfile', profile);
+      dispatch('updateCategoryNames');
+    },
+    updateCategoryNames({ commit, state }) {
+      if (state.profile.hashtag1) {
+        commit('updateCategoryName', { categoryNumber: 1, name: state.profile.hashtag1 });
+      }
+      if (state.profile.hashtag2) {
+        commit('updateCategoryName', { categoryNumber: 2, name: state.profile.hashtag2 });
+      }
     },
     async fetchUploads({ commit }) {
       const querySnapshot = await getDocs(collection(db, 'uploads'));
@@ -121,11 +133,13 @@ export default createStore({
     addTimelineItem({ commit }, item) {
       commit('addTimelineItem', item);
     },
-    saveCategory1({ commit }, category) {  // 追加
-      commit('setCategory1', category);
-    },
-    saveCategory2({ commit }, category) {  // 追加
-      commit('setCategory2', category);
+    saveCategory({ commit }, { categoryNumber, category }) {
+      commit('setCategory', { categoryNumber, category });
+    }
+  },
+  getters: {
+    getCategoryName: (state) => (categoryNumber) => {
+      return state[`category${categoryNumber}`].name;
     }
   }
 });
