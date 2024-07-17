@@ -27,14 +27,15 @@ export default createStore({
     category1: {
       name: 'Category1',
       items: [],
-      currdeg: 0
+      currdeg: 0,
+      localCount: 0 // カテゴリー1用のローカルカウント
     },
     category2: {
       name: 'Category2',
       items: [],
-      currdeg: 0
+      currdeg: 0,
+      localCount: 0 // カテゴリー2用のローカルカウント
     },
-    globalCount: 0 // グローバルカウントの追加
   },
   mutations: {
     updateProfile(state, payload) {
@@ -46,7 +47,7 @@ export default createStore({
       state[`category${categoryNumber}`].name = name;
     },
     setSelectedImage(state, imageUrl) {
-      state.selectedImage = imageUrl
+      state.selectedImage = imageUrl;
     },
     setUser(state, user) {
       state.user = user;
@@ -69,16 +70,15 @@ export default createStore({
     setTimelineItems(state, items) {
       state.timelineItems = items;
     },
-    
     setCategory(state, { categoryNumber, category }) {
       state[`category${categoryNumber}`] = category;
     },
     ADD_ITEM_TO_CATEGORY(state, { categoryNumber, item }) {
-      const category = categoryNumber === 1 ? state.category1 : state.category2;
+      const category = state[`category${categoryNumber}`];
 
       // カウントを更新
-      item.count = state.globalCount + 1;
-      state.globalCount += 1;
+      item.count = category.localCount + 1;
+      category.localCount += 1;
 
       // 6枚以上の場合は最も古いアイテムを削除
       if (category.items.length >= 6) {
@@ -91,11 +91,7 @@ export default createStore({
       state.timelineItems.unshift(item);
     },
     UPDATE_CATEGORY_ROTATION(state, { categoryNumber, currdeg }) {
-      if (categoryNumber === 1) {
-        state.category1.currdeg = currdeg;
-      } else if (categoryNumber === 2) {
-        state.category2.currdeg = currdeg;
-      }
+      state[`category${categoryNumber}`].currdeg = currdeg;
     }
   },
   actions: {
@@ -171,5 +167,4 @@ export default createStore({
     getProfilePhotos: (state) => state.profile.profilePhotos,
     getSecondContentPhotos: (state) => state.profile.secondContentPhotos
   }
-  
 });

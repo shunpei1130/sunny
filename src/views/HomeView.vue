@@ -6,7 +6,7 @@
         <b class="date">{{ currentDate }}</b>
         <div v-for="(category, index) in [category1, category2]" :key="category.name" class="category" :class="`category-${index + 1}`">
           <div class="category-title">#{{ profile.hashtag || category.name }}</div>
-          <div class="container" ref="categoryContainer" @touchstart="touchStart" @touchmove="touchMove" @touchend="(e) => touchEnd(e, category)">
+          <div class="container" ref="categoryContainer" @touchstart="touchStart" @touchmove="touchMove" @touchend="(e) => touchEnd(e, category, index + 1)">
             <div class="carousel" :style="{ transform: `rotateY(${category.currdeg}deg)` }">
               <div v-if="!category.items.length" class="item a empty-item" @click="() => addPhotoToCategory(category, index + 1)">
                 <!-- Empty item content -->
@@ -107,14 +107,14 @@ export default {
       store.commit('ADD_TIMELINE_ITEM', newItem);
     };
 
-    const rotateCarousel = (category, direction) => {
+    const rotateCarousel = (category, categoryNumber, direction) => {
       if (direction === 'left') {
         category.currdeg -= 60;
       } else {
         category.currdeg += 60;
       }
       store.dispatch('updateCategoryRotation', {
-        categoryNumber: category === category2.value ? 2 : 1,
+        categoryNumber,
         currdeg: category.currdeg
       });
     };
@@ -146,7 +146,7 @@ export default {
       event.preventDefault();
     };
 
-    const touchEnd = (event, category) => {
+    const touchEnd = (event, category, categoryNumber) => {
       if (!isHorizontalScroll.value) {
         return;
       }
@@ -156,9 +156,9 @@ export default {
 
       if (Math.abs(diffX) > 50) {
         if (diffX > 0) {
-          rotateCarousel(category, 'left');
+          rotateCarousel(category, categoryNumber, 'left');
         } else {
-          rotateCarousel(category, 'right');
+          rotateCarousel(category, categoryNumber, 'right');
         }
       }
     };
@@ -187,9 +187,6 @@ export default {
   }
 };
 </script>
-
-
-
 
 
 
