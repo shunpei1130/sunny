@@ -63,7 +63,7 @@
         </svg>
     </div>
     <div v-if="activeItem === 'logout'" class="rectangle-div">
-      <div class="nav-item" @click="navigate('confirmLogout')">ログアウトを確認</div>
+      <div class="nav-item" @click="confirmLogout">ログアウトを確認</div>
       <div class="nav-item" @click="navigate('cancelLogout')">キャンセル</div>
     </div>
         
@@ -93,6 +93,9 @@
   
   <script>
   import HeaderView from './HeaderView.vue';
+  import { getAuth, signOut } from 'firebase/auth';
+  import { useRouter } from 'vue-router';
+
   export default {
     components: {
       HeaderView,
@@ -115,7 +118,25 @@
         // ホームページに遷移するロジック
         this.$router.push('/');
       }
-    }
+    },
+    setup() {
+    const router = useRouter();
+    const auth = getAuth();
+
+    const confirmLogout = async () => {
+      try {
+        await signOut(auth);
+        router.push('/login');
+      } catch (error) {
+        console.error('ログアウトエラー:', error);
+      }
+    };
+
+    return {
+      confirmLogout
+    };
+  }
+    
   };
   </script>
   

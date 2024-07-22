@@ -96,8 +96,12 @@ router.beforeEach(async (to, from, next) => {
 
       if (!profileSnap.exists() && to.name !== 'EditProfile') {
         next('/EditProfile');
-      } else if (profileSnap.exists() && to.name === 'login') {
-        next('/'); // すでにプロフィールが存在する場合、ログインページからホームページへリダイレクト
+      } else if (profileSnap.exists()) {
+        if (to.name === 'login' || to.name === 'register' || to.name === 'welcome' || to.name === 'privacy-policy' || to.name === 'sms-verification') {
+          next('/');
+        } else {
+          next();
+        }
       } else {
         next();
       }
