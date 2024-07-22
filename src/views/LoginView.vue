@@ -1,7 +1,7 @@
 <template>
-  <div class="register">
-    <h2>Register</h2>
-    <form @submit.prevent="registerUser">
+  <div class="login">
+    <h2>Login</h2>
+    <form @submit.prevent="loginUser">
       <div>
         <label for="email">Email:</label>
         <input type="email" v-model="email" required>
@@ -10,9 +10,10 @@
         <label for="password">Password:</label>
         <input type="password" v-model="password" required>
       </div>
-      <button type="submit">Register</button>
+      <button type="submit">Login</button>
     </form>
     <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
+    <p>Don't have an account? <router-link to="/register">Register here</router-link></p>
   </div>
 </template>
 
@@ -28,14 +29,14 @@ export default {
     };
   },
   methods: {
-    ...mapActions(['register']),
-    async registerUser() {
+    ...mapActions(['login']),
+    async loginUser() {
       try {
-        await this.register({ email: this.email, password: this.password });
+        await this.login({ email: this.email, password: this.password });
         this.$router.push('/');
       } catch (error) {
-        console.error('Registration failed:', error);
-        this.errorMessage = error.message; // エラーメッセージの設定
+        console.error('Login failed:', error);
+        this.errorMessage = 'Incorrect email or password.'; // エラーメッセージの設定
       }
     }
   }

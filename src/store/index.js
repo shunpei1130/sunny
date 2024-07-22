@@ -1,4 +1,7 @@
 import { createStore } from 'vuex';
+import { auth } from '../firebase';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+
 export default createStore({
   state: {
     profile: {
@@ -11,10 +14,7 @@ export default createStore({
       profilePhotos: [],
       secondContentPhotos: [],
     },
-    user: {
-      username: '',
-      password: ''
-    },
+    user: null, // userオブジェクトをnullで初期化
     uploads: [],
     isLoading: true,
     isRegistered: false,
@@ -118,7 +118,36 @@ export default createStore({
         commit('updateCategoryName', { categoryNumber: 2, name: state.profile.hashtag2 });
       }
     },
-
+    async register({ commit }, { email, password }) {
+      console.log('register action called with email:', email);
+      try {
+        const { user } = await createUserWithEmailAndPassword(auth, email, password);
+        commit('setUser', user);
+      } catch (error) {
+        console.error('Error registering user:', error);
+        throw error; // エラーを投げてキャッチできるようにする
+      }
+    },
+    async login({ commit }, { email, password }) {
+      console.log('login action called with email:', email);
+      try {
+        const { user } = await signInWithEmailAndPassword(auth, email, password);
+        commit('setUser', user);
+      } catch (error) {
+        console.error('Error logging in:', error);
+        throw error; // エラーを投げてキャッチできるようにする
+      }
+    },
+    async logout({ commit }) {
+      console.log('logout action called');
+      try {
+        await signOut(auth);
+        commit('setUser', null);
+      } catch (error) {
+        console.error('Error logging out:', error);
+        throw error; // エラーを投げてキャッチできるようにする
+      }
+    },
     initializeApp({ commit }) {
       console.log('initializeApp action called');
       setTimeout(() => {
@@ -159,6 +188,6 @@ export default createStore({
     }
   },
   getters: {
-
+    // 必要に応じてgettersを追加
   }
 });
