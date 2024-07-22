@@ -55,7 +55,7 @@
     <div class="setting-item" @click="toggleNavBar('logout')">
       <div class="rectangle-parent">
         <div class="group-child"></div>
-        <div class="item-text">ログアウト</div>
+        <div class="item-text">ログアウトを確認</div>
         <img class="icons-arrow-right" alt="arrow" src="../assets/arrow_right.png" />
       </div>
       <svg class="item-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -63,8 +63,7 @@
         </svg>
     </div>
     <div v-if="activeItem === 'logout'" class="rectangle-div">
-      <div class="nav-item" @click="confirmLogout">ログアウトを確認</div>
-      <div class="nav-item" @click="navigate('cancelLogout')">キャンセル</div>
+      <div class="nav-item" @click="confirmLogout">ログアウトする</div>
     </div>
         
         

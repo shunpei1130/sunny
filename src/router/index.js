@@ -52,6 +52,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/profile/:userId',
+    name: 'userProfile',
+    component: UserProfile,
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/search',
     name: 'search',
     component: SearchView,
@@ -96,14 +102,13 @@ router.beforeEach(async (to, from, next) => {
 
       if (!profileSnap.exists() && to.name !== 'EditProfile') {
         next('/EditProfile');
-      } else if (profileSnap.exists()) {
-        if (to.name === 'login' || to.name === 'register' || to.name === 'welcome' || to.name === 'privacy-policy' || to.name === 'sms-verification') {
-          next('/');
+      } else {
+        // 自分のプロフィールページにリダイレクトするための処理
+        if (to.name === 'profile' && !to.params.userId) {
+          next({ name: 'userProfile', params: { userId: user.uid } });
         } else {
           next();
         }
-      } else {
-        next();
       }
     } catch (error) {
       console.error("Error fetching profile:", error);

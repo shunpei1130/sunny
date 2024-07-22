@@ -25,14 +25,15 @@
       </svg>
     </div>
     <div v-if="results.length > 0" class="results">
-      <div v-for="user in results" :key="user.userId" class="result-item">
-        <img :src="user.photo" alt="プロフィール写真" class="profile-photo"/>
-        <div class="user-info">
-          <div class="username">{{ user.username }}</div>
-          <div class="bio">{{ user.bio }}</div>
-        </div>
-      </div>
+  <div v-for="user in results" :key="user.userId" class="result-item" @click="goToUserProfile(user.userId)">
+    <img :src="user.photo" alt="プロフィール写真" class="profile-photo"/>
+    <div class="user-info">
+      <div class="username">{{ user.username }}</div>
+      <div class="bio">{{ user.bio }}</div>
     </div>
+  </div>
+</div>
+
     <div v-else-if="searchQuery" class="no-results">
       一致するユーザーが見つかりませんでした。
     </div>
@@ -73,8 +74,21 @@ export default {
       console.error('Error searching users:', error);
       this.results = [];
     }
+  },
+  focusInput() {
+    this.$refs.searchInput.focus();
+  },
+  onInputFocus() {
+    this.isFocused = true;
+  },
+  onInputBlur() {
+    this.isFocused = false;
+  },
+  goToUserProfile(userId) {
+    this.$router.push({ name: 'userProfile', params: { userId } });
   }
 },
+
 }
 </script>
 

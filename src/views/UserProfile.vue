@@ -1,6 +1,6 @@
 <template>
   <HeaderView />
-  <div class="profile-view">
+  <div class="profile-view" v-if="profile">
     <!-- プロフィール画像 -->
     <div class="profile-image">
       <img v-if="profile.photo" :src="profile.photo" alt="プロフィール写真" class="photo-circle"/>
@@ -15,16 +15,16 @@
     <!-- 自己紹介 -->
     <div class="description">{{ profile.bio }}</div>
 
-    <!-- プロフィールを編集するボタン -->
-    <button class="edit-profile" @click="goToEditProfile()">プロフィールを編集する</button>
+    <!-- プロフィールを編集するボタン（自分のプロフィールの場合のみ表示） -->
+    <button v-if="isCurrentUser" class="edit-profile" @click="goToEditProfile()">プロフィールを編集する</button>
 
     <!-- フォロー・フォロワー -->
     <div class="follow-info">
-      <div class="follow" @click="goToHome()">
+      <div class="follow">
         <div class="follow-count">0</div>
         <div class="follow-text">follow</div>
       </div>
-      <div class="follower" @click="goToHome()">
+      <div class="follower">
         <div class="follower-count">0</div>
         <div class="follower-text">follower</div>
       </div>
@@ -32,41 +32,19 @@
 
     <!-- 画像コンテンツセット1 -->
     <div class="content-set">
-    <div class="hashtags">
-      <div class="hashtag">#{{ profile.hashtag1 }}</div>
-    </div>
-    <div class="content">
-      <!-- category1.items が存在する場合にそれを表示 -->
-      <template v-if="filteredCategory1Items && filteredCategory1Items.length">
-        <div v-for="item in filteredCategory1Items" :key="item.id" class="content-box">
-          <img :src="item.imageUrl" :alt="item.description" class="content-image" />
-          <div class="content-count">{{ item.count }}</div>
-        </div>
-        <!-- 空きスロットの数を計算して表示 -->
-        <div v-for="i in emptySlots" :key="'empty-' + i" class="content-box">+</div>
-      </template>
-      <template v-else>
-        <div class="content-box">0</div>
-        <div class="content-box">+</div>
-        <div class="content-box">+</div>
-      </template>
-    </div>
-  </div>
-
-    <!-- 画像コンテンツ追加セット2 -->
-    <div class="content-set">
       <div class="hashtags">
-        <div class="hashtag">#{{ profile.hashtag2 }}</div>
+        <div class="hashtag">#{{ profile.hashtag1 }}</div>
       </div>
       <div class="content">
-        <!-- category2.items が存在する場合にそれを表示 -->
-      <template v-if="filteredCategory2Items && filteredCategory2Items.length">
-        <div v-for="item in filteredCategory2Items" :key="item.id" class="content-box">
-          <img :src="item.imageUrl" :alt="item.description" class="content-image" />
-          <div class="content-count">{{ item.count }}</div>
-        </div>
-        <div v-for="i in emptySlots2" :key="'empty2-' + i" class="content-box">+</div>
-      </template>
+        <!-- category1.items が存在する場合にそれを表示 -->
+        <template v-if="filteredCategory1Items && filteredCategory1Items.length">
+          <div v-for="item in filteredCategory1Items" :key="item.id" class="content-box">
+            <img :src="item.imageUrl" :alt="item.description" class="content-image" />
+            <div class="content-count">{{ item.count }}</div>
+          </div>
+          <!-- 空きスロットの数を計算して表示 -->
+          <div v-for="i in emptySlots1" :key="'empty-' + i" class="content-box">+</div>
+        </template>
         <template v-else>
           <div class="content-box">0</div>
           <div class="content-box">+</div>
@@ -75,15 +53,37 @@
       </div>
     </div>
 
+    <!-- 画像コンテンツ追加セット2 -->
+    <div class="content-set">
+      <div class="hashtags">
+        <div class="hashtag">#{{ profile.hashtag2 }}</div>
+      </div>
+      <div class="content">
+        <!-- category2.items が存在する場合にそれを表示 -->
+        <template v-if="filteredCategory2Items && filteredCategory2Items.length">
+          <div v-for="item in filteredCategory2Items" :key="item.id" class="content-box">
+            <img :src="item.imageUrl" :alt="item.description" class="content-image" />
+            <div class="content-count">{{ item.count }}</div>
+          </div>
+          <div v-for="i in emptySlots2" :key="'empty2-' + i" class="content-box">+</div>
+        </template>
+        <template v-else>
+          <div class="content-box">0</div>
+          <div class="content-box">+</div>
+          <div class="content-box">+</div>
+        </template>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 import { useStore } from 'vuex';
-import { ref, watchEffect, computed } from 'vue';
+import { ref, watchEffect, computed, onMounted, watch } from 'vue';
 import HeaderView from './HeaderView.vue';
-import { useRouter } from 'vue-router';
-import { onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import { doc, getDoc, getFirestore } from 'firebase/firestore';
+import { auth } from '../firebase';
 
 export default {
   components: {
@@ -91,16 +91,36 @@ export default {
   },
   name: 'UserProfile',
   setup() {
-    onMounted(() => {
-      store.dispatch('fetchProfile');
-    });
     const store = useStore();
     const router = useRouter();
-    const profile = computed(() => store.state.profile); // Vuexストアのprofileを取得
-    const profilePhotos = computed(() => store.state.profile.profilePhotos || []); // VuexストアのprofilePhotosを取得
-    const secondContentPhotos = computed(() => store.state.profile.secondContentPhotos || []); // VuexストアのsecondContentPhotosを取得
-    const category1 = computed(() => store.state.category1); // Vuexストアのcategory1を取得
-    const category2 = computed(() => store.state.category2); // Vuexストアのcategory2を取得
+    const route = useRoute();
+    const profile = ref(null);
+    const userId = ref(route.params.userId || auth.currentUser.uid); // 動的にユーザーIDを取得
+    const isCurrentUser = computed(() => userId.value === auth.currentUser.uid); // 現在のユーザーかどうかを判定
+
+    onMounted(() => {
+      store.dispatch('fetchProfile');
+      fetchProfile(userId.value);
+    });
+    // ルートの変更を監視
+    watch(() => route.params.userId, (newUserId) => {
+      userId.value = newUserId;
+      fetchProfile(newUserId);
+    });
+
+    const fetchProfile = async (userId) => {
+      const db = getFirestore();
+      const profileRef = doc(db, 'profiles', userId);
+      const profileSnap = await getDoc(profileRef);
+      if (profileSnap.exists()) {
+        profile.value = profileSnap.data();
+      }
+    };
+
+    const profilePhotos = computed(() => store.state.profile.profilePhotos || []);
+    const secondContentPhotos = computed(() => store.state.profile.secondContentPhotos || []);
+    const category1 = computed(() => store.state.category1);
+    const category2 = computed(() => store.state.category2);
 
     // コンソールログを追加
     console.log('Profile:', profile.value);
@@ -145,9 +165,9 @@ export default {
       filteredCategory1Items,
       filteredCategory2Items,
       emptySlots1,
-      emptySlots2
+      emptySlots2,
+      isCurrentUser
     };
-    
   }
 };
 </script>
