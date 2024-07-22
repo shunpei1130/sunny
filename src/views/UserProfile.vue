@@ -59,13 +59,14 @@
         <div class="hashtag">#{{ profile.hashtag2 }}</div>
       </div>
       <div class="content">
-        <template v-if="secondContentPhotos && secondContentPhotos.length">
-          <div v-for="photo in secondContentPhotos" :key="photo.id" class="content-box">
-            <img :src="photo.imageUrl" :alt="photo.description" class="content-image" />
-            <div class="content-count">{{ photo.count }}</div>
-          </div>
-          <div v-for="i in (3 - secondContentPhotos.length)" :key="i" class="content-box">+</div>
-        </template>
+        <!-- category2.items が存在する場合にそれを表示 -->
+      <template v-if="filteredCategory2Items && filteredCategory2Items.length">
+        <div v-for="item in filteredCategory2Items" :key="item.id" class="content-box">
+          <img :src="item.imageUrl" :alt="item.description" class="content-image" />
+          <div class="content-count">{{ item.count }}</div>
+        </div>
+        <div v-for="i in emptySlots2" :key="'empty2-' + i" class="content-box">+</div>
+      </template>
         <template v-else>
           <div class="content-box">0</div>
           <div class="content-box">+</div>
@@ -79,7 +80,7 @@
 
 <script>
 import { useStore } from 'vuex';
-import { ref, watchEffect, computed, onMounted } from 'vue';
+import { ref, watchEffect, computed } from 'vue';
 import HeaderView from './HeaderView.vue';
 import { useRouter } from 'vue-router';
 
@@ -95,8 +96,10 @@ export default {
     const profilePhotos = computed(() => store.state.profile.profilePhotos || []);
     const secondContentPhotos = computed(() => store.state.profile.secondContentPhotos || []);
     const category1 = computed(() => store.state.category1);
+    const category2 = computed(() => store.state.category2);
     const maxItems = 3; // 最大アイテム数
     const filteredCategory1Items = ref([]);
+    const filteredCategory2Items = ref([]);
     const goToHome = () => {
       router.push('/');
     };
@@ -105,36 +108,35 @@ export default {
       router.push('/EditProfile');
     };
 
-    const updateFilteredItems = () => {
-  const items = category1.value.items.slice();
-  while (items.length > maxItems) {
-    items.shift(); // 最も古いアイテムを削除
-  }
-  filteredCategory1Items.value = items.reverse(); // 最新のアイテムを左に表示するために反転
-};
+    const updateFilteredItems = (category, filteredItems) => {
+      const items = category.items.slice();
+      while (items.length > maxItems) {
+        items.shift(); // 最も古いアイテムを削除
+      }
+      filteredItems.value = items.reverse(); // 最新のアイテムを左に表示するために反転
+    };
 
 
     watchEffect(() => {
-      updateFilteredItems();
+      updateFilteredItems(category1.value, filteredCategory1Items);
+      updateFilteredItems(category2.value, filteredCategory2Items);
     });
 
-    const emptySlots = computed(() => Math.max(maxItems - filteredCategory1Items.value.length, 0));
-
-    onMounted(() => {
-      console.log('profile:', profile.value);
-      console.log('category1:', category1.value);
-      console.log('profilePhotos:', profilePhotos.value);
-    });
+     const emptySlots1 = computed(() => Math.max(maxItems - filteredCategory1Items.value.length, 0));
+     const emptySlots2 = computed(() => Math.max(maxItems - filteredCategory2Items.value.length, 0));
 
     return {
       category1,
+      category2,
       profile,
       profilePhotos,
       secondContentPhotos,
       goToHome,
       goToEditProfile,
       filteredCategory1Items,
-      emptySlots
+      filteredCategory2Items,
+      emptySlots1,
+      emptySlots2
     };
   }
 };
