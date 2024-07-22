@@ -83,6 +83,7 @@ import { useStore } from 'vuex';
 import { ref, watchEffect, computed } from 'vue';
 import HeaderView from './HeaderView.vue';
 import { useRouter } from 'vue-router';
+import { onMounted } from 'vue';
 
 export default {
   components: {
@@ -90,13 +91,22 @@ export default {
   },
   name: 'UserProfile',
   setup() {
+    onMounted(() => {
+      store.dispatch('fetchProfile');
+    });
     const store = useStore();
     const router = useRouter();
-    const profile = computed(() => store.state.profile);
-    const profilePhotos = computed(() => store.state.profile.profilePhotos || []);
-    const secondContentPhotos = computed(() => store.state.profile.secondContentPhotos || []);
-    const category1 = computed(() => store.state.category1);
-    const category2 = computed(() => store.state.category2);
+    const profile = computed(() => store.state.profile); // Vuexストアのprofileを取得
+    const profilePhotos = computed(() => store.state.profile.profilePhotos || []); // VuexストアのprofilePhotosを取得
+    const secondContentPhotos = computed(() => store.state.profile.secondContentPhotos || []); // VuexストアのsecondContentPhotosを取得
+    const category1 = computed(() => store.state.category1); // Vuexストアのcategory1を取得
+    const category2 = computed(() => store.state.category2); // Vuexストアのcategory2を取得
+
+    // コンソールログを追加
+    console.log('Profile:', profile.value);
+    console.log('Category1:', category1.value);
+    console.log('Category2:', category2.value);
+
     const maxItems = 3; // 最大アイテム数
     const filteredCategory1Items = ref([]);
     const filteredCategory2Items = ref([]);
@@ -116,14 +126,13 @@ export default {
       filteredItems.value = items.reverse(); // 最新のアイテムを左に表示するために反転
     };
 
-
     watchEffect(() => {
       updateFilteredItems(category1.value, filteredCategory1Items);
       updateFilteredItems(category2.value, filteredCategory2Items);
     });
 
-     const emptySlots1 = computed(() => Math.max(maxItems - filteredCategory1Items.value.length, 0));
-     const emptySlots2 = computed(() => Math.max(maxItems - filteredCategory2Items.value.length, 0));
+    const emptySlots1 = computed(() => Math.max(maxItems - filteredCategory1Items.value.length, 0));
+    const emptySlots2 = computed(() => Math.max(maxItems - filteredCategory2Items.value.length, 0));
 
     return {
       category1,
@@ -138,9 +147,11 @@ export default {
       emptySlots1,
       emptySlots2
     };
+    
   }
 };
 </script>
+
 
 
 

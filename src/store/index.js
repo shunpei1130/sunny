@@ -1,6 +1,8 @@
 import { createStore } from 'vuex';
-import { auth } from '../firebase';
+import { auth, db } from '../firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+
 
 export default createStore({
   state: {
@@ -14,7 +16,7 @@ export default createStore({
       profilePhotos: [],
       secondContentPhotos: [],
     },
-    user: null, // userオブジェクトをnullで初期化
+    user: null,
     uploads: [],
     isLoading: true,
     isRegistered: false,
@@ -108,6 +110,43 @@ export default createStore({
       console.log('saveProfile action called with profile:', profile);
       commit('updateProfile', profile);
       dispatch('updateCategoryNames');
+      
+      // Firestoreにプロフィールを保存
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          const profileRef = doc(db, "profiles", profile.username);
+          await setDoc(profileRef, {
+            ...profile,
+            userId: user.uid
+          });
+          console.log("Profile successfully saved to Firestore!");
+        } else {
+          console.log("No user is signed in.");
+        }
+      } catch (e) {
+        console.error("Error saving profile to Firestore: ", e);
+      }
+    },
+    async fetchProfile({ commit }) {
+      console.log('fetchProfile action called');
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          const profileRef = doc(db, "profiles", user.uid);
+          const profileSnap = await getDoc(profileRef);
+          if (profileSnap.exists()) {
+            commit('updateProfile', profileSnap.data());
+            console.log('Profile fetched from Firestore:', profileSnap.data());
+          } else {
+            console.log("No such document!");
+          }
+        } else {
+          console.log("No user is signed in.");
+        }
+      } catch (e) {
+        console.error("Error fetching profile from Firestore: ", e);
+      }
     },
     updateCategoryNames({ commit, state }) {
       console.log('updateCategoryNames action called');
@@ -125,7 +164,7 @@ export default createStore({
         commit('setUser', user);
       } catch (error) {
         console.error('Error registering user:', error);
-        throw error; // エラーを投げてキャッチできるようにする
+        throw error;
       }
     },
     async login({ commit }, { email, password }) {
@@ -135,7 +174,7 @@ export default createStore({
         commit('setUser', user);
       } catch (error) {
         console.error('Error logging in:', error);
-        throw error; // エラーを投げてキャッチできるようにする
+        throw error;
       }
     },
     async logout({ commit }) {
@@ -145,7 +184,7 @@ export default createStore({
         commit('setUser', null);
       } catch (error) {
         console.error('Error logging out:', error);
-        throw error; // エラーを投げてキャッチできるようにする
+        throw error;
       }
     },
     initializeApp({ commit }) {

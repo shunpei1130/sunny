@@ -5,7 +5,8 @@
       <div class="existing-content">
         <b class="date">{{ currentDate }}</b>
         <div v-for="(category, index) in [category1, category2]" :key="category.name" class="category" :class="`category-${index + 1}`">
-          <div class="category-title">#{{ profile.hashtag || category.name }}</div>
+          <div class="category-title">#{{ index === 0 ? profile.hashtag1 : profile.hashtag2 || category.name }}</div>
+
           <div class="container" ref="categoryContainer" @touchstart="touchStart" @touchmove="touchMove" @touchend="(e) => touchEnd(e, category, index + 1)">
             <div class="carousel" :style="{ transform: `rotateY(${category.currdeg}deg)` }">
               <div v-if="!category.items.length" class="item a empty-item" @click="() => addPhotoToCategory(category, index + 1)">
@@ -24,7 +25,7 @@
                     </div>
                   </div>
                   <div class="training">
-                    <b class="training1">#{{ profile.hashtag || category.name }}</b>
+                    <b class="training1">#{{ index === 0 ? profile.hashtag1 : profile.hashtag2 || category.name }}</b>
                   </div>
                   <svg class="ui-child" width="106" height="105" viewBox="0 0 106 105" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <g filter="url(#filter0_d_4102_952)">
@@ -75,7 +76,7 @@
 </template>
 
 <script>
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { useStore } from 'vuex';
 import HeaderView from './HeaderView.vue';
 import FooterView from './FooterView.vue';
@@ -89,6 +90,10 @@ export default {
     TimelineItem
   },
   setup() {
+    onMounted(() => {
+      store.dispatch('fetchProfile');
+      console.log('Profile fetched:', store.state.profile);
+    });
     const store = useStore();
     const profile = computed(() => store.state.profile);
     const category1 = computed(() => store.state.category1);
