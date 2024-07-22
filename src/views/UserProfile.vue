@@ -32,24 +32,26 @@
 
     <!-- 画像コンテンツセット1 -->
     <div class="content-set">
-      <div class="hashtags">
-        <div class="hashtag">#{{ profile.hashtag1 }}</div>
-      </div>
-      <div class="content">
-        <template v-if="profilePhotos && profilePhotos.length">
-          <div v-for="photo in profilePhotos" :key="photo.id" class="content-box">
-            <img :src="photo.imageUrl" :alt="photo.description" class="content-image" />
-            <div class="content-count">{{ photo.count }}</div>
-          </div>
-          <div v-for="i in (3 - profilePhotos.length)" :key="i" class="content-box">+</div>
-        </template>
-        <template v-else>
-          <div class="content-box">0</div>
-          <div class="content-box">+</div>
-          <div class="content-box">+</div>
-        </template>
-      </div>
+    <div class="hashtags">
+      <div class="hashtag">#{{ profile.hashtag1 }}</div>
     </div>
+    <div class="content">
+      <!-- category1.items が存在する場合にそれを表示 -->
+      <template v-if="filteredCategory1Items && filteredCategory1Items.length">
+        <div v-for="item in filteredCategory1Items" :key="item.id" class="content-box">
+          <img :src="item.imageUrl" :alt="item.description" class="content-image" />
+          <div class="content-count">{{ item.count }}</div>
+        </div>
+        <!-- 空きスロットの数を計算して表示 -->
+        <div v-for="i in emptySlots" :key="'empty-' + i" class="content-box">+</div>
+      </template>
+      <template v-else>
+        <div class="content-box">0</div>
+        <div class="content-box">+</div>
+        <div class="content-box">+</div>
+      </template>
+    </div>
+  </div>
 
     <!-- 画像コンテンツ追加セット2 -->
     <div class="content-set">
@@ -77,7 +79,7 @@
 
 <script>
 import { useStore } from 'vuex';
-import { computed } from 'vue';
+import { ref, watchEffect, computed, onMounted } from 'vue';
 import HeaderView from './HeaderView.vue';
 import { useRouter } from 'vue-router';
 
@@ -92,7 +94,9 @@ export default {
     const profile = computed(() => store.state.profile);
     const profilePhotos = computed(() => store.state.profile.profilePhotos || []);
     const secondContentPhotos = computed(() => store.state.profile.secondContentPhotos || []);
-
+    const category1 = computed(() => store.state.category1);
+    const maxItems = 3; // 最大アイテム数
+    const filteredCategory1Items = ref([]);
     const goToHome = () => {
       router.push('/');
     };
@@ -101,12 +105,36 @@ export default {
       router.push('/EditProfile');
     };
 
+    const updateFilteredItems = () => {
+  const items = category1.value.items.slice();
+  while (items.length > maxItems) {
+    items.shift(); // 最も古いアイテムを削除
+  }
+  filteredCategory1Items.value = items.reverse(); // 最新のアイテムを左に表示するために反転
+};
+
+
+    watchEffect(() => {
+      updateFilteredItems();
+    });
+
+    const emptySlots = computed(() => Math.max(maxItems - filteredCategory1Items.value.length, 0));
+
+    onMounted(() => {
+      console.log('profile:', profile.value);
+      console.log('category1:', category1.value);
+      console.log('profilePhotos:', profilePhotos.value);
+    });
+
     return {
+      category1,
       profile,
       profilePhotos,
       secondContentPhotos,
       goToHome,
-      goToEditProfile
+      goToEditProfile,
+      filteredCategory1Items,
+      emptySlots
     };
   }
 };
