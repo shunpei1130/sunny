@@ -1,8 +1,7 @@
 <template>
   <HeaderView />
     <div class="sunny-top">
-      
-      
+          
       <div class="setting-item" @click="toggleNavBar('terms')">
       <div class="rectangle-parent">
         <div class="group-child"></div>

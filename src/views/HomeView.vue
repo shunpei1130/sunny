@@ -27,28 +27,9 @@
                   <div class="training">
                     <b class="training1">#{{ index === 0 ? profile.hashtag1 : profile.hashtag2 || category.name }}</b>
                   </div>
-                  <svg class="ui-child" width="106" height="105" viewBox="0 0 106 105" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <g filter="url(#filter0_d_4102_952)">
-                      <circle cx="53" cy="47" r="47" fill="#008080"/>
-                    </g>
-                    <defs>
-                      <filter id="filter0_d_4102_952" x="0.628572" y="0" width="104.743" height="104.743" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-                        <feFlood flood-opacity="0" result="BackgroundImageFix"/>
-                        <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
-                        <feOffset dy="5.37143"/>
-                        <feGaussianBlur stdDeviation="2.68571"/>
-                        <feComposite in2="hardAlpha" operator="out"/>
-                        <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
-                        <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_4102_952"/>
-                        <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_4102_952" result="shape"/>
-                      </filter>
-                    </defs>
-                  </svg>
-                  <svg class="add-a-photo-icon" width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M8.14337 19.9566C8.14337 21.2183 9.17569 22.2506 10.4374 22.2506C11.6991 22.2506 12.7315 21.2183 12.7315 19.9566V15.3685H17.3196C18.5813 15.3685 19.6136 14.3361 19.6136 13.0744C19.6136 11.8127 18.5813 10.7804 17.3196 10.7804H12.7315V6.19227C12.7315 4.93055 11.6991 3.89822 10.4374 3.89822C9.17569 3.89822 8.14337 4.93055 8.14337 6.19227V10.7804H3.55528C2.29355 10.7804 1.26123 11.8127 1.26123 13.0744C1.26123 14.3361 2.29355 15.3685 3.55528 15.3685H8.14337V19.9566Z" fill="white"/>
-                    <path d="M31.0838 40.603C34.8848 40.603 37.966 37.5217 37.966 33.7208C37.966 29.9199 34.8848 26.8387 31.0838 26.8387C27.2829 26.8387 24.2017 29.9199 24.2017 33.7208C24.2017 37.5217 27.2829 40.603 31.0838 40.603Z" fill="white"/>
-                    <path d="M49.4362 15.3685H42.1641L39.3195 12.2715C38.4707 11.3309 37.2319 10.7804 35.9472 10.7804H21.2653C21.6553 11.4686 21.9077 12.2256 21.9077 13.0744C21.9077 15.5979 19.843 17.6625 17.3196 17.6625H15.0255V19.9566C15.0255 22.48 12.9609 24.5447 10.4374 24.5447C9.58862 24.5447 8.83159 24.2923 8.14337 23.9023V47.4851C8.14337 50.0086 10.208 52.0732 12.7315 52.0732H49.4362C51.9597 52.0732 54.0243 50.0086 54.0243 47.4851V19.9566C54.0243 17.4331 51.9597 15.3685 49.4362 15.3685ZM31.0838 45.1911C24.7523 45.1911 19.6136 40.0524 19.6136 33.7208C19.6136 27.3893 24.7523 22.2506 31.0838 22.2506C37.4154 22.2506 42.5541 27.3893 42.5541 33.7208C42.5541 40.0524 37.4154 45.1911 31.0838 45.1911Z" fill="white"/>
-                  </svg>
+                  <div class="ui-child">
+                    <img class="child-image" src="../assets/Component1.png" alt="Add a photo icon" />
+                  </div>
                 </div>
               </div>
               <div v-else v-for="(item, i) in category.items" :key="item.id" class="item" :class="getItemClass(i)" @click="() => addPhotoToCategory(category, index + 1)">
@@ -198,6 +179,13 @@ export default {
 
 
 <style scoped>
+
+.child-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .top {
   width: 100%;
   min-height: 100vh;
@@ -389,10 +377,10 @@ export default {
 
 .ui-child {
   position: absolute;
-  bottom: 13px;
-  left: 79px;
-  width: 70px;
-  height: 70px;
+    bottom: 6px;
+    left: 62px;
+    width: 100px;
+    height: 100px;
 }
 
 .add-a-photo-icon {
