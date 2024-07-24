@@ -1,7 +1,7 @@
 import { createStore } from 'vuex';
 import { auth, db } from '../firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc,  getDoc } from 'firebase/firestore';
 
 
 export default createStore({
@@ -42,10 +42,6 @@ export default createStore({
       Object.keys(payload).forEach(key => {
         state.profile[key] = payload[key];
       });
-    },
-    updateCategoryName(state, { categoryNumber, name }) {
-      console.log('updateCategoryName called with categoryNumber:', categoryNumber, 'name:', name);
-      state[`category${categoryNumber}`].name = name;
     },
     setSelectedImage(state, imageUrl) {
       console.log('setSelectedImage called with imageUrl:', imageUrl);
@@ -100,30 +96,6 @@ export default createStore({
 
   
   actions: {
-    async saveProfile({ commit, dispatch }, profile) {
-      console.log('saveProfile action called with profile:', profile);
-      commit('updateProfile', profile);
-      dispatch('updateCategoryNames');
-      
-      // Firestoreにプロフィールを保存
-      try {
-        const user = auth.currentUser;
-        if (user) {
-          const profileRef = doc(db, "profiles", profile.username);
-          await setDoc(profileRef, {
-            ...profile,
-            userId: user.uid
-          });
-          console.log("aProfile successfully saved to Firestore!");
-        } else {
-          console.log("No user is signed in.");
-        }
-      } catch (e) {
-        console.error("Error saving profile to Firestore: ", e);
-      }
-    },
-
-
     async fetchProfile({ commit }) {
       console.log('fetchProfile action called');
       try {
@@ -142,15 +114,6 @@ export default createStore({
         }
       } catch (e) {
         console.error("Error fetching profile from Firestore: ", e);
-      }
-    },
-    updateCategoryNames({ commit, state }) {
-      console.log('updateCategoryNames action called');
-      if (state.profile.hashtag1) {
-        commit('updateCategoryName', { categoryNumber: 1, name: state.profile.hashtag1 });
-      }
-      if (state.profile.hashtag2) {
-        commit('updateCategoryName', { categoryNumber: 2, name: state.profile.hashtag2 });
       }
     },
     async register({ commit }, { email, password }) {
