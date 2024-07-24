@@ -75,15 +75,7 @@ export default createStore({
       console.log('setAgreedToPolicy called with agreed:', agreed);
       state.agreedToPolicy = agreed;
     },
-    setTimelineItems(state, items) {
-      console.log('setTimelineItems called with items:', items);
-      state.timelineItems = items;
-    },
-    setCategory(state, { categoryNumber, category }) {
-      console.log('setCategory called with categoryNumber:', categoryNumber, 'category:', category);
-      state[`category${categoryNumber}`] = category;
-    },
-    ADD_ITEM_TO_CATEGORY(state, { categoryNumber, item }) {
+     ADD_ITEM_TO_CATEGORY(state, { categoryNumber, item }) {
       console.log('ADD_ITEM_TO_CATEGORY called with categoryNumber:', categoryNumber, 'item:', item);
       const category = state[`category${categoryNumber}`];
 
@@ -103,7 +95,7 @@ export default createStore({
     UPDATE_CATEGORY_ROTATION(state, { categoryNumber, currdeg }) {
       console.log('UPDATE_CATEGORY_ROTATION called with categoryNumber:', categoryNumber, 'currdeg:', currdeg);
       state[`category${categoryNumber}`].currdeg = currdeg;
-    }
+    },
   },
 
   
@@ -122,7 +114,7 @@ export default createStore({
             ...profile,
             userId: user.uid
           });
-          console.log("Profile successfully saved to Firestore!");
+          console.log("aProfile successfully saved to Firestore!");
         } else {
           console.log("No user is signed in.");
         }
@@ -209,15 +201,8 @@ export default createStore({
         commit('updateProfile', { secondContentPhotos: updatedPhotos });
       }
     },
-    saveTimelineItems({ commit }, items) {
-      console.log('saveTimelineItems action called with items:', items);
-      commit('setTimelineItems', items);
-    },
+    
    
-    saveCategory({ commit }, { categoryNumber, category }) {
-      console.log('saveCategory action called with categoryNumber:', categoryNumber, 'category:', category);
-      commit('setCategory', { categoryNumber, category });
-    },
     addItemToCategory({ commit }, payload) {
       console.log('addItemToCategory action called with payload:', payload);
       commit('ADD_ITEM_TO_CATEGORY', payload);
