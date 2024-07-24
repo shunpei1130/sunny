@@ -105,6 +105,8 @@ export default createStore({
       state[`category${categoryNumber}`].currdeg = currdeg;
     }
   },
+
+  
   actions: {
     async saveProfile({ commit, dispatch }, profile) {
       console.log('saveProfile action called with profile:', profile);
@@ -128,6 +130,8 @@ export default createStore({
         console.error("Error saving profile to Firestore: ", e);
       }
     },
+
+
     async fetchProfile({ commit }) {
       console.log('fetchProfile action called');
       try {
@@ -209,10 +213,7 @@ export default createStore({
       console.log('saveTimelineItems action called with items:', items);
       commit('setTimelineItems', items);
     },
-    addTimelineItem({ commit }, item) {
-      console.log('addTimelineItem action called with item:', item);
-      commit('ADD_TIMELINE_ITEM', item);
-    },
+   
     saveCategory({ commit }, { categoryNumber, category }) {
       console.log('saveCategory action called with categoryNumber:', categoryNumber, 'category:', category);
       commit('setCategory', { categoryNumber, category });

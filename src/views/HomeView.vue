@@ -33,7 +33,7 @@
                 </div>
               </div>
               <div v-else v-for="(item, i) in category.items" :key="item.id" class="item" :class="getItemClass(i)" @click="() => addPhotoToCategory(category, index + 1)">
-                <img :src="item.imageUrl" alt="Item Photo" class="category-image" />
+                <img :src="item.imageUrl" alt="" class="category-image" />
                 <span class="item-count">{{ item.count }}</span>
               </div>
             </div>
@@ -43,10 +43,10 @@
       <div class="timeline-section">
         <div class="timeline">
           <div class="timeline-column">
-            <TimelineItem v-for="item in leftColumnItems" :key="item.id" :imageUrl="item.imageUrl" :description="item.description" :timestamp="item.timestamp" />
+            <TimelineItem v-for="item in leftColumnItems" :key="item.id" :imageUrl="item.imageUrl" :description="item.description" :timestamp="item.timestamp" :count="item.count" :username="item.username" />
           </div>
           <div class="timeline-column">
-            <TimelineItem v-for="item in rightColumnItems" :key="item.id" :imageUrl="item.imageUrl" :description="item.description" :timestamp="item.timestamp" />
+            <TimelineItem v-for="item in rightColumnItems" :key="item.id" :imageUrl="item.imageUrl" :description="item.description" :timestamp="item.timestamp" :count="item.count" :username="item.username" />
           </div>
         </div>
       </div>
@@ -71,10 +71,7 @@ export default {
     TimelineItem
   },
   setup() {
-    onMounted(() => {
-      store.dispatch('fetchProfile');
-      console.log('Profile fetched:', store.state.profile);
-    });
+    
     const store = useStore();
     const profile = computed(() => store.state.profile);
     const category1 = computed(() => store.state.category1);
@@ -82,12 +79,23 @@ export default {
     const timelineItems = computed(() => store.state.timelineItems);
     const currentDate = computed(() => new Date().toISOString().split('T')[0].replace(/-/g, '.'));
 
+    onMounted(() => {
+      store.dispatch('fetchProfile');
+      console.log('Profile fetched:', store.state.profile);
+      console.log('store!!!:', JSON.parse(JSON.stringify(store.state)));
+    });
+
     const addPhotoToCategory = (category, categoryNumber) => {
+      const hashtag = categoryNumber === 1 ? profile.value.hashtag1 : profile.value.hashtag2;
+
+      console.log('Username from profile:', profile.value.username);
       const newItem = {
         id: Date.now(),
         imageUrl: 'path/to/new-image.jpg',
-        description: `New upload for ${category.name}`,
-        timestamp: new Date()
+        description: ` #${hashtag || `Category${categoryNumber}`}`,
+        timestamp: new Date(),
+        count: category.localCount + 1,
+        username: profile.value.username
       };
 
       store.dispatch('addItemToCategory', { categoryNumber, item: newItem });
@@ -295,17 +303,18 @@ export default {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .item-count {
   position: absolute;
-  bottom: 10px;
-  right: 10px;
-  font-size: 24px;
+  font-size: 90px;
   font-weight: bold;
-  background-color: rgba(0, 0, 0, 0.5);
-  padding: 5px 10px;
-  border-radius: 5px;
+  font-family: Commissioner, sans-serif;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .component-child {

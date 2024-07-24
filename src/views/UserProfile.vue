@@ -39,7 +39,7 @@
         <!-- category1.items が存在する場合にそれを表示 -->
         <template v-if="filteredCategory1Items && filteredCategory1Items.length">
           <div v-for="item in filteredCategory1Items" :key="item.id" class="content-box">
-            <img :src="item.imageUrl" :alt="item.description" class="content-image" />
+            <img :src="item.imageUrl" class="content-image" />
             <div class="content-count">{{ item.count }}</div>
           </div>
           <!-- 空きスロットの数を計算して表示 -->
@@ -62,7 +62,7 @@
         <!-- category2.items が存在する場合にそれを表示 -->
         <template v-if="filteredCategory2Items && filteredCategory2Items.length">
           <div v-for="item in filteredCategory2Items" :key="item.id" class="content-box">
-            <img :src="item.imageUrl" :alt="item.description" class="content-image" />
+            <img :src="item.imageUrl" class="content-image" />
             <div class="content-count">{{ item.count }}</div>
           </div>
           <div v-for="i in emptySlots2" :key="'empty2-' + i" class="content-box">+</div>
@@ -320,15 +320,20 @@ export default {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 .content-count {
-  position: absolute;
-  bottom: 10px;
-  right: 10px;
-  font-size: 24px;
-  background-color: rgba(0, 0, 0, 0.5);
-  padding: 5px 10px;
-  border-radius: 5px;
+  position: relative;
+  font-size: 90px;
+  font-family: Commissioner, sans-serif;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  z-index: 2;
 }
 </style>
