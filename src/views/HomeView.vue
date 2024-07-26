@@ -32,7 +32,7 @@
                   </div>
                 </div>
               </div>
-              <div v-else v-for="(item, i) in category.items" :key="item.id" class="item" :class="getItemClass(i)" @click="() => addPhotoToCategory(category, index + 1)">
+              <div v-else v-for="(item, i) in getLatestItems(category.items, 6)" :key="item.id" class="item" :class="getItemClass(i)" @click="() => addPhotoToCategory(category, index + 1)">
                 <img :src="item.imageUrl" alt="" class="category-image" />
                 <span class="item-count">{{ item.count }}</span>
               </div>
@@ -88,6 +88,12 @@ export default {
       console.log('Profile fetched:', store.state.profile);
       console.log('store!!!:', JSON.parse(JSON.stringify(store.state)));
     });
+    
+
+    // 最新のアイテムを取得する関数
+    const getLatestItems = (items, count) => {
+      return [...items].sort((a, b) => b.timestamp - a.timestamp).slice(0, count);
+    };
 
     const addPhotoToCategory = async (category, categoryNumber) => {
       if (fileInput.value) {
@@ -103,7 +109,7 @@ export default {
               description 
             });
           }
-        };
+        }
       }
     };
 
@@ -183,7 +189,8 @@ export default {
       touchStart,
       touchMove,
       touchEnd,
-      getItemClass
+      getItemClass,
+      getLatestItems
     };
   }
 };
