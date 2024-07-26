@@ -54,6 +54,8 @@
     <FooterView />
   </div>
   
+  <!-- 非表示のファイル入力要素 -->
+  <input type="file" ref="fileInput" style="display: none;" accept="image/*">
 </template>
 
 <script>
@@ -73,6 +75,7 @@ export default {
   setup() {
     
     const store = useStore();
+    const fileInput = ref(null);
     const profile = computed(() => store.state.profile);
     const category1 = computed(() => store.state.category1);
     const category2 = computed(() => store.state.category2);
@@ -81,25 +84,27 @@ export default {
 
     onMounted(() => {
       store.dispatch('fetchProfile');
+      store.dispatch('fetchCategoryItems');
       console.log('Profile fetched:', store.state.profile);
       console.log('store!!!:', JSON.parse(JSON.stringify(store.state)));
     });
 
-    const addPhotoToCategory = (category, categoryNumber) => {
-      const hashtag = categoryNumber === 1 ? profile.value.hashtag1 : profile.value.hashtag2;
-
-      console.log('Username from profile:', profile.value.username);
-      const newItem = {
-        id: Date.now(),
-        imageUrl: 'path/to/new-image.jpg',
-        description: ` #${hashtag || `Category${categoryNumber}`}`,
-        timestamp: new Date(),
-        count: category.localCount + 1,
-        username: profile.value.username
-      };
-
-      store.dispatch('addItemToCategory', { categoryNumber, item: newItem });
-      store.commit('ADD_TIMELINE_ITEM', newItem);
+    const addPhotoToCategory = async (category, categoryNumber) => {
+      if (fileInput.value) {
+        fileInput.value.click();
+        fileInput.value.onchange = async (event) => {
+          const file = event.target.files[0];
+          if (file) {
+            const hashtag = categoryNumber === 1 ? profile.value.hashtag1 : profile.value.hashtag2;
+            const description = `#${hashtag || `Category${categoryNumber}`}`;
+            await store.dispatch('addPhotoToCategory', { 
+              categoryNumber, 
+              file, 
+              description 
+            });
+          }
+        };
+      }
     };
 
     const rotateCarousel = (category, categoryNumber, direction) => {
@@ -173,6 +178,7 @@ export default {
       category2,
       leftColumnItems,
       rightColumnItems,
+      fileInput,
       addPhotoToCategory,
       touchStart,
       touchMove,

@@ -78,16 +78,23 @@ export default defineComponent({
   name: "EditProfile",
   setup() {
 
-
-
-
     const uploadImage = async (file) => {
   if (!file) return null;
-  const storageReference = storageRef(storage, `images/${file.name}`);
+  const user = auth.currentUser;
+  if (!user) return null;
+
+  // ユーザー固有のパスを使用
+  const storageReference = storageRef(storage, `users/${user.uid}/images/${file.name}`);
+  // または共有イメージディレクトリを使用する場合
+  // const storageReference = storageRef(storage, `images/${user.uid}_${file.name}`);
+
   await uploadBytes(storageReference, file);
   const url = await getDownloadURL(storageReference);
   return url;
 };
+
+
+
 
 const onFileChange = async (event) => {
   const file = event.target.files[0];
@@ -141,22 +148,22 @@ const onFileChange = async (event) => {
 
 
     const saveProfile = async () => {
-      console.log('保存されたプロフィール:', editProfile);
-      try {
-        const user = auth.currentUser;
-        if (user) {
-          // FirestoreにユーザーIDを使用してドキュメント参照を作成
-          const profileRef = doc(db, "profiles", user.uid);
-          await setDoc(profileRef, {
-            ...editProfile,
-            userId: user.uid
-          });
-          router.push('/profile');
-        }
-      } catch (e) {
-        console.error("Error saving profile: ", e);
-      }
-    };
+  console.log('保存されたプロフィール:', editProfile);
+  try {
+    const user = auth.currentUser;
+    if (user) {
+      const profileRef = doc(db, "profiles", user.uid);
+      await setDoc(profileRef, {
+        ...editProfile,
+        userId: user.uid,
+        photoURL: editProfile.photo // プロフィール写真のURLを保存
+      });
+      router.push('/profile');
+    }
+  } catch (e) {
+    console.error("Error saving profile: ", e);
+  }
+};
 
     const goProfile = () => {
       router.push('/profile');

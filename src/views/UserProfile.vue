@@ -77,12 +77,13 @@
   </div>
 </template>
 
+
+
 <script>
-import { useStore } from 'vuex';
-import { ref, watchEffect, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import HeaderView from './HeaderView.vue';
 import { useRouter, useRoute } from 'vue-router';
-import { doc, getDoc, getFirestore } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, getFirestore } from 'firebase/firestore';
 import { auth } from '../firebase';
 
 export default {
@@ -91,45 +92,59 @@ export default {
   },
   name: 'UserProfile',
   setup() {
-    const store = useStore();
     const router = useRouter();
     const route = useRoute();
     const profile = ref(null);
-    const userId = ref(route.params.userId || auth.currentUser.uid); // 動的にユーザーIDを取得
-    const isCurrentUser = computed(() => userId.value === auth.currentUser.uid); // 現在のユーザーかどうかを判定
+    const category1 = ref({ items: [] });
+    const category2 = ref({ items: [] });
+    const userId = ref(route.params.userId || auth.currentUser.uid);
+    const isCurrentUser = computed(() => userId.value === auth.currentUser.uid);
 
-    onMounted(() => {
-      store.dispatch('fetchProfile');
-      fetchProfile(userId.value);
-    });
-    // ルートの変更を監視
-    watch(() => route.params.userId, (newUserId) => {
-      userId.value = newUserId;
-      fetchProfile(newUserId);
-    });
-
-    const fetchProfile = async (userId) => {
+    const fetchUserData = async (uid) => {
       const db = getFirestore();
-      const profileRef = doc(db, 'profiles', userId);
+      const profileRef = doc(db, 'profiles', uid);
       const profileSnap = await getDoc(profileRef);
       if (profileSnap.exists()) {
         profile.value = profileSnap.data();
+        
+        // カテゴリー1のアイテムを取得
+        const category1Ref = collection(db, 'profiles', uid, 'category1');
+        const category1Snap = await getDocs(category1Ref);
+        category1.value.items = category1Snap.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+
+        // カテゴリー2のアイテムを取得
+        const category2Ref = collection(db, 'profiles', uid, 'category2');
+        const category2Snap = await getDocs(category2Ref);
+        category2.value.items = category2Snap.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
       }
     };
 
-    const profilePhotos = computed(() => store.state.profile.profilePhotos || []);
-    const secondContentPhotos = computed(() => store.state.profile.secondContentPhotos || []);
-    const category1 = computed(() => store.state.category1);
-    const category2 = computed(() => store.state.category2);
+    onMounted(() => {
+      fetchUserData(userId.value);
+    });
 
-    // コンソールログを追加
-    console.log('Profile:', profile.value);
-    console.log('Category1:', category1.value);
-    console.log('Category2:', category2.value);
+    watch(() => route.params.userId, (newUserId) => {
+      userId.value = newUserId || auth.currentUser.uid;
+      fetchUserData(userId.value);
+    });
 
-    const maxItems = 3; // 最大アイテム数
-    const filteredCategory1Items = ref([]);
-    const filteredCategory2Items = ref([]);
+    const maxItems = 3;
+    const filteredCategory1Items = computed(() => {
+      return category1.value.items.slice(-maxItems).reverse();
+    });
+    const filteredCategory2Items = computed(() => {
+      return category2.value.items.slice(-maxItems).reverse();
+    });
+
+    const emptySlots1 = computed(() => Math.max(maxItems - filteredCategory1Items.value.length, 0));
+    const emptySlots2 = computed(() => Math.max(maxItems - filteredCategory2Items.value.length, 0));
+
     const goToHome = () => {
       router.push('/');
     };
@@ -138,28 +153,10 @@ export default {
       router.push('/EditProfile');
     };
 
-    const updateFilteredItems = (category, filteredItems) => {
-      const items = category.items.slice();
-      while (items.length > maxItems) {
-        items.shift(); // 最も古いアイテムを削除
-      }
-      filteredItems.value = items.reverse(); // 最新のアイテムを左に表示するために反転
-    };
-
-    watchEffect(() => {
-      updateFilteredItems(category1.value, filteredCategory1Items);
-      updateFilteredItems(category2.value, filteredCategory2Items);
-    });
-
-    const emptySlots1 = computed(() => Math.max(maxItems - filteredCategory1Items.value.length, 0));
-    const emptySlots2 = computed(() => Math.max(maxItems - filteredCategory2Items.value.length, 0));
-
     return {
+      profile,
       category1,
       category2,
-      profile,
-      profilePhotos,
-      secondContentPhotos,
       goToHome,
       goToEditProfile,
       filteredCategory1Items,

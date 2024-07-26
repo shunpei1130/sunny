@@ -1,7 +1,8 @@
 import { createStore } from 'vuex';
-import { auth, db } from '../firebase';
+import { auth, db,storage } from '../firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { doc,  getDoc } from 'firebase/firestore';
+import { doc, collection, addDoc,getDocs ,getDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 
 export default createStore({
@@ -92,6 +93,10 @@ export default createStore({
       console.log('UPDATE_CATEGORY_ROTATION called with categoryNumber:', categoryNumber, 'currdeg:', currdeg);
       state[`category${categoryNumber}`].currdeg = currdeg;
     },
+    SET_CATEGORY_ITEMS(state, { categoryNumber, items }) {
+      state[`category${categoryNumber}`].items = items;
+      state[`category${categoryNumber}`].localCount = items.length;
+    },
   },
 
   
@@ -173,6 +178,59 @@ export default createStore({
     updateCategoryRotation({ commit }, payload) {
       console.log('updateCategoryRotation action called with payload:', payload);
       commit('UPDATE_CATEGORY_ROTATION', payload);
+    },
+    async addPhotoToCategory({ state, commit }, { categoryNumber, file, description }) {
+      try {
+        const user = auth.currentUser;
+        if (!user) throw new Error('User not authenticated');
+    
+        // Upload image to Firebase Storage
+        const storageRef = ref(storage, `users/${user.uid}/category${categoryNumber}/${Date.now()}`);
+        await uploadBytes(storageRef, file);
+        const imageUrl = await getDownloadURL(storageRef);
+    
+        // Add item to Firestore
+        const profileRef = doc(db, "profiles", user.uid);
+        const categoryRef = collection(profileRef, `category${categoryNumber}`);
+        const newItem = {
+          imageUrl,
+          description,
+          timestamp: new Date(),
+          count: state[`category${categoryNumber}`].localCount + 1
+        };
+        const docRef = await addDoc(categoryRef, newItem);
+    
+        // Update local state
+        commit('ADD_ITEM_TO_CATEGORY', { 
+          categoryNumber, 
+          item: { ...newItem, id: docRef.id }
+        });
+        commit('ADD_TIMELINE_ITEM', { ...newItem, id: docRef.id, username: state.profile.username });
+      } catch (error) {
+        console.error('Error adding photo to category:', error);
+        throw error;
+      }
+    },
+
+    async fetchCategoryItems({ commit }) {
+      try {
+        const user = auth.currentUser;
+        if (!user) throw new Error('User not authenticated');
+    
+        const profileRef = doc(db, "profiles", user.uid);
+        
+        for (let i = 1; i <= 2; i++) {
+          const categoryRef = collection(profileRef, `category${i}`);
+          const querySnapshot = await getDocs(categoryRef);
+          const items = [];
+          querySnapshot.forEach((doc) => {
+            items.push({ id: doc.id, ...doc.data() });
+          });
+          commit('SET_CATEGORY_ITEMS', { categoryNumber: i, items });
+        }
+      } catch (error) {
+        console.error('Error fetching category items:', error);
+      }
     }
   },
   getters: {

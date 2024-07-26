@@ -26,7 +26,7 @@
     </div>
     <div v-if="results.length > 0" class="results">
   <div v-for="user in results" :key="user.userId" class="result-item" @click="goToUserProfile(user.userId)">
-    <img :src="user.photo" alt="プロフィール写真" class="profile-photo"/>
+    <img :src="user.photo || 'デフォルト画像のURL'" alt="プロフィール写真" class="profile-photo"/>
     <div class="user-info">
       <div class="username">{{ user.username }}</div>
       <div class="bio">{{ user.bio }}</div>
@@ -58,23 +58,30 @@ export default {
     }
   },
   methods: {
-  async performSearch() {
-    console.log('Searching for:', this.searchQuery);
-    if (this.searchQuery.trim() === '') {
-      this.results = [];
-      return;
-    }
-    try {
-      const db = getFirestore();
-      const profilesCollection = collection(db, 'profiles'); // 'profiles'コレクションから検索
-      const q = query(profilesCollection, where('username', '==', this.searchQuery));
-      const querySnapshot = await getDocs(q);
-      this.results = querySnapshot.docs.map(doc => doc.data());
-    } catch (error) {
-      console.error('Error searching users:', error);
-      this.results = [];
-    }
-  },
+    async performSearch() {
+  console.log('Searching for:', this.searchQuery);
+  if (this.searchQuery.trim() === '') {
+    this.results = [];
+    return;
+  }
+  try {
+    const db = getFirestore();
+    const profilesCollection = collection(db, 'profiles');
+    const q = query(
+      profilesCollection,
+      where('username', '>=', this.searchQuery),
+      where('username', '<=', this.searchQuery + '\uf8ff')
+    );
+    const querySnapshot = await getDocs(q);
+    this.results = querySnapshot.docs.map(doc => ({
+      ...doc.data(),
+      userId: doc.id
+    }));
+  } catch (error) {
+    console.error('Error searching users:', error);
+    this.results = [];
+  }
+},
   focusInput() {
     this.$refs.searchInput.focus();
   },
