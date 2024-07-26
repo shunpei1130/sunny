@@ -1,12 +1,26 @@
 import { createStore } from 'vuex';
 import { auth, db,storage } from '../firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { doc, collection, addDoc,getDocs ,getDoc } from 'firebase/firestore';
+import { 
+  doc, 
+  updateDoc, 
+  arrayUnion, 
+  arrayRemove, 
+  getDoc, 
+  setDoc,
+  getDocs, 
+  collection, 
+  getFirestore, 
+  addDoc,
+  writeBatch, 
+} from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 
 export default createStore({
   state: {
+    following: [],
+    followers: [],
     profile: {
       hashtag1: '',
       hashtag2: '',
@@ -38,6 +52,12 @@ export default createStore({
     },
   },
   mutations: {
+    SET_FOLLOWING(state, following) {
+      state.following = following;
+    },
+    SET_FOLLOWERS(state, followers) {
+      state.followers = followers;
+    },
     updateProfile(state, payload) {
       console.log('updateProfile called with payload:', payload);
       Object.keys(payload).forEach(key => {
@@ -231,7 +251,110 @@ export default createStore({
       } catch (error) {
         console.error('Error fetching category items:', error);
       }
-    }
+    },
+    async followUser({ commit, state }, userIdToFollow) {
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error('User not authenticated');
+    
+      const db = getFirestore();
+      const batch = writeBatch(db);
+    
+      try {
+        // 現在のユーザーのfollowingリストを更新
+        const currentUserRef = doc(db, 'users', currentUser.uid);
+        const currentUserDoc = await getDoc(currentUserRef);
+        if (!currentUserDoc.exists()) {
+          batch.set(currentUserRef, { following: [userIdToFollow], followers: [] });
+        } else {
+          batch.update(currentUserRef, {
+            following: arrayUnion(userIdToFollow)
+          });
+        }
+    
+        // フォロー対象ユーザーのfollowersリストを更新
+        const userToFollowRef = doc(db, 'users', userIdToFollow);
+        const userToFollowDoc = await getDoc(userToFollowRef);
+        if (!userToFollowDoc.exists()) {
+          batch.set(userToFollowRef, { following: [], followers: [currentUser.uid] });
+        } else {
+          batch.update(userToFollowRef, {
+            followers: arrayUnion(currentUser.uid)
+          });
+        }
+    
+        await batch.commit();
+        commit('SET_FOLLOWING', [...state.following, userIdToFollow]);
+      } catch (error) {
+        console.error('Error following user:', error);
+        if (error.code === 'permission-denied') {
+          console.error('Permission denied. Check security rules and user authentication.');
+        }
+        throw error;
+      }
+    },
+
+    async unfollowUser({ commit, state }, userIdToUnfollow) {
+      const currentUser = auth.currentUser;
+      if (!currentUser) return;
+
+      const userRef = doc(db, 'users', currentUser.uid);
+      await updateDoc(userRef, {
+        following: arrayRemove(userIdToUnfollow)
+      });
+
+      const unfollowedUserRef = doc(db, 'users', userIdToUnfollow);
+      await updateDoc(unfollowedUserRef, {
+        followers: arrayRemove(currentUser.uid)
+      });
+
+      commit('SET_FOLLOWING', state.following.filter(id => id !== userIdToUnfollow));
+    },
+
+    async fetchFollowData({ commit }) {
+      const currentUser = auth.currentUser;
+      if (!currentUser) return;
+    
+      try {
+        const userRef = doc(db, 'users', currentUser.uid);
+        const userDoc = await getDoc(userRef);
+        
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          commit('SET_FOLLOWING', userData.following || []);
+          commit('SET_FOLLOWERS', userData.followers || []);
+        } else {
+          // ユーザードキュメントが存在しない場合、新しく作成
+          await setDoc(userRef, { following: [], followers: [] });
+          commit('SET_FOLLOWING', []);
+          commit('SET_FOLLOWERS', []);
+        }
+      } catch (error) {
+        console.error('Error fetching follow data:', error);
+        commit('SET_FOLLOWING', []);
+        commit('SET_FOLLOWERS', []);
+      }
+    },
+
+    async fetchTimelineItems({ commit, state }) {
+      const currentUser = auth.currentUser;
+      if (!currentUser) return;
+
+      const userIds = [currentUser.uid, ...state.following];
+      const timelineItems = [];
+
+      for (const userId of userIds) {
+        const userTimelineRef = collection(db, 'profiles', userId, 'timeline');
+        const userTimelineSnapshot = await getDocs(userTimelineRef);
+        userTimelineSnapshot.forEach(doc => {
+          timelineItems.push({ id: doc.id, ...doc.data(), userId });
+        });
+      }
+
+      // Sort timeline items by timestamp
+      timelineItems.sort((a, b) => b.timestamp - a.timestamp);
+
+      commit('SET_TIMELINE_ITEMS', timelineItems);
+    },
   },
   getters: {
     // 必要に応じてgettersを追加

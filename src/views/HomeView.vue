@@ -82,7 +82,9 @@ export default {
     const timelineItems = computed(() => store.state.timelineItems);
     const currentDate = computed(() => new Date().toISOString().split('T')[0].replace(/-/g, '.'));
 
-    onMounted(() => {
+    onMounted(async() => {
+      await store.dispatch('fetchFollowData');
+      await store.dispatch('fetchTimelineItems');
       store.dispatch('fetchProfile');
       store.dispatch('fetchCategoryItems');
       console.log('Profile fetched:', store.state.profile);

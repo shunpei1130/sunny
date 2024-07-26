@@ -18,15 +18,20 @@
     <!-- プロフィールを編集するボタン（自分のプロフィールの場合のみ表示） -->
     <button v-if="isCurrentUser" class="edit-profile" @click="goToEditProfile()">プロフィールを編集する</button>
 
+    <!-- フォロー/アンフォローボタン（他人のプロフィールの場合のみ表示） -->
+    <button v-if="!isCurrentUser" @click="toggleFollow" class="follow-button">
+      {{ isFollowing ? 'フォロー解除' : 'フォローする' }}
+    </button>
+
     <!-- フォロー・フォロワー -->
     <div class="follow-info">
       <div class="follow">
-        <div class="follow-count">0</div>
-        <div class="follow-text">follow</div>
+        <div class="follow-count">{{ followingCount }}</div>
+        <div class="follow-text">フォロー中</div>
       </div>
       <div class="follower">
-        <div class="follower-count">0</div>
-        <div class="follower-text">follower</div>
+        <div class="follower-count">{{ followersCount }}</div>
+        <div class="follower-text">フォロワー</div>
       </div>
     </div>
 
@@ -36,7 +41,6 @@
         <div class="hashtag">#{{ profile.hashtag1 }}</div>
       </div>
       <div class="content">
-        <!-- category1.items が存在する場合にそれを表示 -->
         <template v-if="filteredCategory1Items && filteredCategory1Items.length">
           <div v-for="item in filteredCategory1Items" :key="item.id" class="content-box">
             <img :src="item.imageUrl" class="content-image" />
@@ -59,7 +63,6 @@
         <div class="hashtag">#{{ profile.hashtag2 }}</div>
       </div>
       <div class="content">
-        <!-- category2.items が存在する場合にそれを表示 -->
         <template v-if="filteredCategory2Items && filteredCategory2Items.length">
           <div v-for="item in filteredCategory2Items" :key="item.id" class="content-box">
             <img :src="item.imageUrl" class="content-image" />
@@ -85,6 +88,8 @@ import HeaderView from './HeaderView.vue';
 import { useRouter, useRoute } from 'vue-router';
 import { doc, getDoc, collection, getDocs, getFirestore } from 'firebase/firestore';
 import { auth } from '../firebase';
+import { useStore } from 'vuex';
+import { onAuthStateChanged } from 'firebase/auth';
 
 export default {
   components: {
@@ -92,6 +97,7 @@ export default {
   },
   name: 'UserProfile',
   setup() {
+    const store = useStore();
     const router = useRouter();
     const route = useRoute();
     const profile = ref(null);
@@ -100,47 +106,119 @@ export default {
     const userId = ref(route.params.userId || auth.currentUser.uid);
     const isCurrentUser = computed(() => userId.value === auth.currentUser.uid);
 
-    const fetchUserData = async (uid) => {
-      const db = getFirestore();
-      const profileRef = doc(db, 'profiles', uid);
-      const profileSnap = await getDoc(profileRef);
-      if (profileSnap.exists()) {
-        profile.value = profileSnap.data();
-        
-        // カテゴリー1のアイテムを取得
-        const category1Ref = collection(db, 'profiles', uid, 'category1');
-        const category1Snap = await getDocs(category1Ref);
-        category1.value.items = category1Snap.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+    const isFollowing = computed(() => store.state.following.includes(userId.value));
+    const followingCount = computed(() => profile.value?.following?.length || 0);
+    const followersCount = computed(() => profile.value?.followers?.length || 0);
 
-        // カテゴリー2のアイテムを取得
-        const category2Ref = collection(db, 'profiles', uid, 'category2');
-        const category2Snap = await getDocs(category2Ref);
-        category2.value.items = category2Snap.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-      }
-    };
+    const fetchUserData = async (uid) => {
+  try {
+    const db = getFirestore();
+    
+    // プロファイル情報の取得
+    const profileRef = doc(db, 'profiles', uid);
+    const profileSnap = await getDoc(profileRef);
+    
+    if (profileSnap.exists()) {
+      profile.value = profileSnap.data();
+      console.log("Profile data:", profile.value);
+    } else {
+      console.log("No profile found for this user");
+      profile.value = null; // プロファイルが存在しない場合は null をセット
+    }
+
+    // カテゴリー1のアイテムを取得
+    const category1Ref = collection(db, 'profiles', uid, 'category1');
+    const category1Snap = await getDocs(category1Ref);
+    category1.value.items = category1Snap.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    console.log("Category 1 items:", category1.value.items);
+
+    // カテゴリー2のアイテムを取得
+    const category2Ref = collection(db, 'profiles', uid, 'category2');
+    const category2Snap = await getDocs(category2Ref);
+    category2.value.items = category2Snap.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    console.log("Category 2 items:", category2.value.items);
+
+    // フォロー/フォロワー情報の取得
+    const userRef = doc(db, 'users', uid);
+    const userSnap = await getDoc(userRef);
+    
+    if (userSnap.exists()) {
+      const userData = userSnap.data();
+      followingCount.value = userData.following?.length || 0;
+      followersCount.value = userData.followers?.length || 0;
+      console.log("Follow data:", { following: followingCount.value, followers: followersCount.value });
+    } else {
+      console.log("No user document found for follow data");
+      followingCount.value = 0;
+      followersCount.value = 0;
+    }
+
+  } catch (error) {
+    console.error("Error fetching user data:", error);
+    if (error.code === 'permission-denied') {
+      console.error("Permission denied. Check security rules.");
+    }
+    // エラーが発生した場合、各値をリセットまたはデフォルト値を設定
+    profile.value = null;
+    category1.value.items = [];
+    category2.value.items = [];
+    followingCount.value = 0;
+    followersCount.value = 0;
+  }
+};
 
     onMounted(() => {
-      fetchUserData(userId.value);
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        fetchUserData(userId.value);
+        store.dispatch('fetchFollowData');
+      } else {
+        // ユーザーが認証されていない場合の処理
+        console.log('User is not authenticated');
+        // 必要に応じて、ログインページにリダイレクトするなどの処理を追加
+      }
     });
+  });
 
     watch(() => route.params.userId, (newUserId) => {
       userId.value = newUserId || auth.currentUser.uid;
       fetchUserData(userId.value);
     });
 
+    const toggleFollow = async () => {
+  if (!auth.currentUser) {
+    console.error('User not authenticated');
+    // ここでログインページにリダイレクトするなどの処理を追加
+    return;
+  }
+
+  try {
+    if (isFollowing.value) {
+      await store.dispatch('unfollowUser', userId.value);
+    } else {
+      await store.dispatch('followUser', userId.value);
+    }
+  } catch (error) {
+    console.error('Error toggling follow:', error);
+  }
+};
     const maxItems = 3;
     const filteredCategory1Items = computed(() => {
-      return category1.value.items.slice(-maxItems).reverse();
+      return getLatestItems(category1.value.items, maxItems);
     });
     const filteredCategory2Items = computed(() => {
-      return category2.value.items.slice(-maxItems).reverse();
+      return getLatestItems(category2.value.items, maxItems);
     });
+
+    const getLatestItems = (items, count) => {
+      return [...items].sort((a, b) => b.timestamp - a.timestamp).slice(0, count);
+    };
 
     const emptySlots1 = computed(() => Math.max(maxItems - filteredCategory1Items.value.length, 0));
     const emptySlots2 = computed(() => Math.max(maxItems - filteredCategory2Items.value.length, 0));
@@ -163,7 +241,11 @@ export default {
       filteredCategory2Items,
       emptySlots1,
       emptySlots2,
-      isCurrentUser
+      isCurrentUser,
+      isFollowing,
+      toggleFollow,
+      followingCount,
+      followersCount
     };
   }
 };
