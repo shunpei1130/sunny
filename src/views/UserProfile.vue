@@ -24,16 +24,16 @@
     </button>
 
     <!-- フォロー・フォロワー -->
-    <div class="follow-info">
-      <div class="follow">
-        <div class="follow-count">{{ followingCount }}</div>
-        <div class="follow-text">フォロー中</div>
-      </div>
-      <div class="follower">
-        <div class="follower-count">{{ followersCount }}</div>
-        <div class="follower-text">フォロワー</div>
-      </div>
+  <div class="follow-info">
+    <div class="follow" @click="openFollowModal('following')">
+      <div class="follow-count">{{ followingCount }}</div>
+      <div class="follow-text">フォロー中</div>
     </div>
+    <div class="follower" @click="openFollowModal('followers')">
+      <div class="follower-count">{{ followersCount }}</div>
+      <div class="follower-text">フォロワー</div>
+    </div>
+  </div>
 
     <!-- 画像コンテンツセット1 -->
     <div class="content-set">
@@ -78,6 +78,14 @@
       </div>
     </div>
   </div>
+
+  <!-- 統合されたフォローリストモーダル -->
+  <FollowListModal
+    :show="showFollowModal"
+    :following="followingUsers"
+    :followers="followerUsers"
+    @close="closeFollowModal"
+  />
 </template>
 
 
@@ -90,10 +98,12 @@ import { doc, getDoc, collection, getDocs, getFirestore } from 'firebase/firesto
 import { auth } from '../firebase';
 import { useStore } from 'vuex';
 import { onAuthStateChanged } from 'firebase/auth';
+import FollowListModal from './FollowListModal.vue';
 
 export default {
   components: {
-    HeaderView
+    HeaderView,
+    FollowListModal
   },
   name: 'UserProfile',
   setup() {
@@ -103,8 +113,8 @@ export default {
     const profile = ref(null);
     const category1 = ref({ items: [] });
     const category2 = ref({ items: [] });
-    const userId = ref(route.params.userId || auth.currentUser.uid);
-    const isCurrentUser = computed(() => userId.value === auth.currentUser.uid);
+    const userId = ref(null);
+    const isCurrentUser = computed(() => userId.value === auth.currentUser?.uid);
 
     const isFollowing = computed(() => store.state.following.includes(userId.value));
     const followingCount = ref(0);
@@ -174,23 +184,23 @@ export default {
   }
 };
 
-    onMounted(() => {
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        fetchUserData(userId.value);
-        store.dispatch('fetchFollowData');
-      } else {
-        // ユーザーが認証されていない場合の処理
-        console.log('User is not authenticated');
-        // 必要に応じて、ログインページにリダイレクトするなどの処理を追加
-      }
-    });
-  });
-
-    watch(() => route.params.userId, (newUserId) => {
-      userId.value = newUserId || auth.currentUser.uid;
+onMounted(() => {
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      userId.value = route.params.userId || user.uid;
       fetchUserData(userId.value);
-    });
+      store.dispatch('fetchFollowData');
+    } else {
+      console.log('User is not authenticated');
+      router.push('/login');
+    }
+  });
+});
+
+watch(() => route.params.userId, (newUserId) => {
+  userId.value = newUserId || auth.currentUser?.uid;
+  fetchUserData(userId.value);
+});
 
     const toggleFollow = async () => {
   if (!auth.currentUser) {
@@ -232,6 +242,38 @@ export default {
       router.push('/EditProfile');
     };
 
+    const showFollowModal = ref(false);
+    const followingUsers = ref([]);
+    const followerUsers = ref([]);
+
+    const fetchFollowUsers = async (userIds) => {
+      const db = getFirestore();
+      const users = [];
+      for (const userId of userIds) {
+        const userRef = doc(db, 'profiles', userId);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          users.push({ id: userId, ...userSnap.data() });
+        }
+      }
+      return users;
+    };
+
+    const openFollowModal = async () => {
+      const userRef = doc(getFirestore(), 'users', userId.value);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
+        followingUsers.value = await fetchFollowUsers(userData.following || []);
+        followerUsers.value = await fetchFollowUsers(userData.followers || []);
+        showFollowModal.value = true;
+      }
+    };
+
+    const closeFollowModal = () => {
+      showFollowModal.value = false;
+    };
+
     return {
       profile,
       category1,
@@ -246,7 +288,13 @@ export default {
       isFollowing,
       toggleFollow,
       followingCount,
-      followersCount
+      followersCount,
+      showFollowModal,
+      followingUsers,
+      followerUsers,
+      openFollowModal,
+      closeFollowModal,
+      userId,
     };
   }
 };
@@ -257,6 +305,18 @@ export default {
 
 
 <style scoped>
+
+.follow-info {
+  cursor: pointer;
+}
+
+.follow, .follower {
+  transition: background-color 0.3s;
+}
+
+.follow:hover, .follower:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
 
 .follow-button{
   width: 96.545px;
