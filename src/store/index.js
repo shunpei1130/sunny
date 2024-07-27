@@ -13,6 +13,8 @@ import {
   getFirestore, 
   addDoc,
   writeBatch, 
+  query, 
+  orderBy 
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
@@ -116,6 +118,9 @@ export default createStore({
     SET_CATEGORY_ITEMS(state, { categoryNumber, items }) {
       state[`category${categoryNumber}`].items = items;
       state[`category${categoryNumber}`].localCount = items.length;
+    },
+    SET_TIMELINE_ITEMS(state, items) {
+      state.timelineItems = items;
     },
   },
 
@@ -335,25 +340,35 @@ export default createStore({
       }
     },
 
-    async fetchTimelineItems({ commit, state }) {
-      const currentUser = auth.currentUser;
-      if (!currentUser) return;
+    async fetchTimelineItems({ commit }) {
+      const user = auth.currentUser;
+      if (!user) return;
 
-      const userIds = [currentUser.uid, ...state.following];
-      const timelineItems = [];
+      try {
+        const timelineItems = [];
+        const categories = ['category1', 'category2'];
 
-      for (const userId of userIds) {
-        const userTimelineRef = collection(db, 'profiles', userId, 'timeline');
-        const userTimelineSnapshot = await getDocs(userTimelineRef);
-        userTimelineSnapshot.forEach(doc => {
-          timelineItems.push({ id: doc.id, ...doc.data(), userId });
-        });
+        for (const category of categories) {
+          const categoryRef = collection(db, 'profiles', user.uid, category);
+          const q = query(categoryRef, orderBy('timestamp', 'desc'));
+          const querySnapshot = await getDocs(q);
+
+          querySnapshot.forEach((doc) => {
+            timelineItems.push({
+              id: doc.id,
+              ...doc.data(),
+              category
+            });
+          });
+        }
+
+        // タイムスタンプで降順にソート
+        timelineItems.sort((a, b) => b.timestamp - a.timestamp);
+
+        commit('SET_TIMELINE_ITEMS', timelineItems);
+      } catch (error) {
+        console.error('Error fetching timeline items:', error);
       }
-
-      // Sort timeline items by timestamp
-      timelineItems.sort((a, b) => b.timestamp - a.timestamp);
-
-      commit('SET_TIMELINE_ITEMS', timelineItems);
     },
   },
   getters: {

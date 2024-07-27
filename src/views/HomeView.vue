@@ -40,6 +40,7 @@
           </div>
         </div>
       </div>
+      
       <div class="timeline-section">
         <div class="timeline">
           <div class="timeline-column">
