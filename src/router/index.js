@@ -35,12 +35,14 @@ const routes = [
   {
     path: '/welcome',
     name: 'welcome',
-    component: WelcomeView
+    component: WelcomeView,
+    meta: { requiresGuest: true }
   },
   {
     path: '/privacy-policy',
     name: 'privacy-policy',
-    component: PrivacyPolicyView
+    component: PrivacyPolicyView,
+    meta: { requiresGuest: true }
   },
   /*一旦SMS認証は保留
   {
@@ -94,10 +96,13 @@ const router = createRouter({
 
 router.beforeEach(async (to, from, next) => {
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
+  const requiresGuest = to.matched.some(record => record.meta.requiresGuest);
   const isAuthenticated = auth.currentUser;
 
   if (requiresAuth && !isAuthenticated) {
     next('/login');
+  } else if (requiresGuest && isAuthenticated) {
+    next('/'); // ホームページにリダイレクト
   } else if (isAuthenticated) {
     try {
       const user = auth.currentUser;

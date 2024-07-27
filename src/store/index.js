@@ -30,11 +30,8 @@ export default createStore({
       bio: '',
       age: '',
       photo: '',
-      profilePhotos: [],
-      secondContentPhotos: [],
     },
     user: null,
-    uploads: [],
     isLoading: true,
     isRegistered: false,
     agreedToPolicy: false,
@@ -74,14 +71,8 @@ export default createStore({
       console.log('setUser called with user:', user);
       state.user = user;
     },
-    setUploads(state, uploads) {
-      console.log('setUploads called with uploads:', uploads);
-      state.uploads = uploads;
-    },
-    addUpload(state, upload) {
-      console.log('addUpload called with upload:', upload);
-      state.uploads.push(upload);
-    },
+  
+  
     setIsLoading(state, isLoading) {
       console.log('setIsLoading called with isLoading:', isLoading);
       state.isLoading = isLoading;
@@ -184,16 +175,7 @@ export default createStore({
         commit('setIsRegistered', users.length > 0);
       }, 2000);
     },
-    savePhoto({ commit, state }, { photo, type }) {
-      console.log('savePhoto action called with photo:', photo, 'type:', type);
-      if (type === 'profile') {
-        const updatedPhotos = [photo, ...state.profile.profilePhotos].slice(0, 3);
-        commit('updateProfile', { profilePhotos: updatedPhotos });
-      } else if (type === 'secondContent') {
-        const updatedPhotos = [photo, ...state.profile.secondContentPhotos].slice(0, 3);
-        commit('updateProfile', { secondContentPhotos: updatedPhotos });
-      }
-    },
+    
     
    
     addItemToCategory({ commit }, payload) {
