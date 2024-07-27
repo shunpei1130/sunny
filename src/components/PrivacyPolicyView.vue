@@ -42,7 +42,7 @@
       const onAgree = () => {
         if (agreed.value) {
           store.commit('setAgreedToPolicy', true)
-          router.push('/sms-verification')
+          router.push('/')
         }
       }
   

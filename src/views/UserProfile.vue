@@ -150,8 +150,8 @@ export default {
     
     if (userSnap.exists()) {
       const userData = userSnap.data();
-      followingCount.value = userData.following.length - 1 || 0; 
-      followersCount.value = userData.followers.length - 1|| 0;
+      followingCount.value = userData.following.length || 0; 
+      followersCount.value = userData.followers.length || 0;
       // 自分自身を除外するため、-1 しています
       console.log("Follow data:", { following: followingCount.value, followers: followersCount.value });
     } else {
@@ -258,6 +258,21 @@ export default {
 
 <style scoped>
 
+.follow-button{
+  width: 96.545px;
+  height: 24px;
+  flex-shrink: 0;
+  border-radius: 20px;
+  background: #ECECEC;
+  margin-top: 5px;
+  color: #000;
+  text-align: center;
+  font-family: Chenla;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 400;
+}
+
 .photo-circle {
   width: 100%;
   height: 100%;
@@ -320,7 +335,7 @@ export default {
 .follow-info {
   display: flex;
   justify-content: space-between;
-  width: 22%;
+  width: 30%;
   margin-top: 5px;
 }
 .follow, .follower {

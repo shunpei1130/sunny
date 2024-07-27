@@ -2,7 +2,9 @@ import { createRouter, createWebHistory } from 'vue-router';
 import HomeView from '../views/HomeView.vue';
 import WelcomeView from '../components/WelcomeView.vue';
 import PrivacyPolicyView from '../components/PrivacyPolicyView.vue';
+/*
 import SMSVerificationView from '../components/SMSVerificationView.vue';
+*/
 import UserProfile from '../views/UserProfile.vue';
 import SearchView from '../views/SearchView.vue';
 import NotificationView from '../views/NotificationView.vue';
@@ -40,11 +42,13 @@ const routes = [
     name: 'privacy-policy',
     component: PrivacyPolicyView
   },
+  /*一旦SMS認証は保留
   {
     path: '/sms-verification',
     name: 'sms-verification',
     component: SMSVerificationView
   },
+  */
   {
     path: '/profile',
     name: 'profile',

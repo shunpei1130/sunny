@@ -123,7 +123,7 @@ const onFileChange = async (event) => {
       { id: 'hashtag1', label: '#1', placeholder: '1つ目のハッシュタグ' },
       { id: 'hashtag2', label: '#2', placeholder: '2つ目のハッシュタグ' },
       { id: 'username', label: 'ID', placeholder: '' },
-      { id: 'bio', label: 'profile', placeholder: '' }
+      { id: 'bio', label: 'yourself', placeholder: '' }
     ];
 
     const showModal = ref(false);
