@@ -14,7 +14,7 @@ import {
   addDoc,
   writeBatch, 
   query, 
-  orderBy 
+  orderBy,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
@@ -340,36 +340,63 @@ export default createStore({
       }
     },
 
-    async fetchTimelineItems({ commit }) {
+    async fetchTimelineItems({ commit, state }) {
       const user = auth.currentUser;
       if (!user) return;
-
+    
       try {
-        const timelineItems = [];
+        let timelineItems = [];
         const categories = ['category1', 'category2'];
-
+    
+        // 自分のアイテムを取得
         for (const category of categories) {
           const categoryRef = collection(db, 'profiles', user.uid, category);
           const q = query(categoryRef, orderBy('timestamp', 'desc'));
           const querySnapshot = await getDocs(q);
-
+    
           querySnapshot.forEach((doc) => {
             timelineItems.push({
               id: doc.id,
               ...doc.data(),
-              category
+              category,
+              username: state.profile.username,
+              userId: user.uid
             });
           });
         }
-
-        // タイムスタンプで降順にソート
+    
+        // フォローしているユーザーのアイテムを取得
+        for (const followedUserId of state.following) {
+          const userProfileRef = doc(db, 'profiles', followedUserId);
+          const userProfileSnap = await getDoc(userProfileRef);
+          const followedUsername = userProfileSnap.data().username;
+    
+          for (const category of categories) {
+            const categoryRef = collection(db, 'profiles', followedUserId, category);
+            const q = query(categoryRef, orderBy('timestamp', 'desc'));
+            const querySnapshot = await getDocs(q);
+    
+            querySnapshot.forEach((doc) => {
+              timelineItems.push({
+                id: doc.id,
+                ...doc.data(),
+                category,
+                username: followedUsername,
+                userId: followedUserId
+              });
+            });
+          }
+        }
+    
+        // タイムスタンプで降順にソートし、最新の20アイテムのみを保持
         timelineItems.sort((a, b) => b.timestamp - a.timestamp);
-
+        timelineItems = timelineItems.slice(0, 20);
+    
         commit('SET_TIMELINE_ITEMS', timelineItems);
       } catch (error) {
         console.error('Error fetching timeline items:', error);
       }
-    },
+    }
   },
   getters: {
     // 必要に応じてgettersを追加

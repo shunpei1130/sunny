@@ -107,8 +107,8 @@ export default {
     const isCurrentUser = computed(() => userId.value === auth.currentUser.uid);
 
     const isFollowing = computed(() => store.state.following.includes(userId.value));
-    const followingCount = computed(() => profile.value?.following?.length || 0);
-    const followersCount = computed(() => profile.value?.followers?.length || 0);
+    const followingCount = ref(0);
+    const followersCount = ref(0);
 
     const fetchUserData = async (uid) => {
   try {
@@ -150,8 +150,9 @@ export default {
     
     if (userSnap.exists()) {
       const userData = userSnap.data();
-      followingCount.value = userData.following?.length || 0;
-      followersCount.value = userData.followers?.length || 0;
+      followingCount.value = userData.following.length - 1 || 0; 
+      followersCount.value = userData.followers.length - 1|| 0;
+      // 自分自身を除外するため、-1 しています
       console.log("Follow data:", { following: followingCount.value, followers: followersCount.value });
     } else {
       console.log("No user document found for follow data");

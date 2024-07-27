@@ -84,13 +84,13 @@ export default {
     const currentDate = computed(() => new Date().toISOString().split('T')[0].replace(/-/g, '.'));
 
     onMounted(async() => {
-      await store.dispatch('fetchFollowData');
-      await store.dispatch('fetchTimelineItems');
-      store.dispatch('fetchProfile');
-      store.dispatch('fetchCategoryItems');
-      console.log('Profile fetched:', store.state.profile);
-      console.log('store!!!:', JSON.parse(JSON.stringify(store.state)));
-    });
+  await store.dispatch('fetchFollowData');
+  await store.dispatch('fetchProfile');
+  await store.dispatch('fetchTimelineItems');
+  store.dispatch('fetchCategoryItems');
+  console.log('Profile fetched:', store.state.profile);
+  console.log('store!!!:', JSON.parse(JSON.stringify(store.state)));
+});
     
 
     // 最新のアイテムを取得する関数
