@@ -12,10 +12,22 @@ import SettingView from '../views/SettingView.vue';
 import EditProfile from '../views/EditProfile.vue';
 import LoginView from '../views/LoginView.vue';
 import RegisterView from '../views/RegisterView.vue';
+import ChatView from '../views/ChatView.vue';
+import ChatRoom from '../views/ChatRoom.vue';
 import { auth, db } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
 const routes = [
+  {
+    path: '/chat',
+    name: 'Chat',
+    component: ChatView
+  },
+  {
+    path: '/chat/:id',
+    name: 'ChatRoom',
+    component: ChatRoom
+  },
   {
     path: '/',
     name: 'home',
