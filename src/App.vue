@@ -7,7 +7,7 @@
 </template>
 
 <script>
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import SplashScreen from './components/SplashScreen.vue';
@@ -27,13 +27,22 @@ export default {
     const isRegistered = computed(() => store.state.isRegistered);
     const agreedToPolicy = computed(() => store.state.agreedToPolicy);
 
-    store.dispatch('initializeApp').then(() => {
-      if (!isRegistered.value) {
-        if (!agreedToPolicy.value) {
-          router.push('/welcome');
+    onMounted(async () => {
+      try {
+        await store.dispatch('initializeApp');
+        if (!isRegistered.value) {
+          if (!agreedToPolicy.value) {
+            router.push('/welcome');
+          } else {
+            router.push('/sms-verification');
+          }
         } else {
-          router.push('/sms-verification');
+          // ユーザーが登録済みの場合、ホーム画面にリダイレクト
+          router.push('/');
         }
+      } catch (error) {
+        console.error('Initialization error:', error);
+        // エラーハンドリング（例：エラーページへのリダイレクトなど）
       }
     });
 

@@ -167,13 +167,17 @@ export default createStore({
         throw error;
       }
     },
-    initializeApp({ commit }) {
+    initializeApp({ commit, dispatch }) {
       console.log('initializeApp action called');
-      setTimeout(() => {
+      commit('setIsLoading', true);
+      return Promise.all([
+        dispatch('fetchFollowData'),
+        dispatch('fetchProfile'),
+        dispatch('fetchTimelineItems'),
+        dispatch('fetchCategoryItems')
+      ]).finally(() => {
         commit('setIsLoading', false);
-        const users = JSON.parse(localStorage.getItem('users')) || [];
-        commit('setIsRegistered', users.length > 0);
-      }, 2000);
+      });
     },
     
     

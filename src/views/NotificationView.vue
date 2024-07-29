@@ -1,4 +1,5 @@
 <template>
+  <HeaderView />
   <div class="notification-view">
     <h2>通知</h2>
     <div v-if="notifications.length === 0" class="no-notifications">
@@ -24,8 +25,12 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { getFirestore, collection, query, where, onSnapshot, orderBy, limit, updateDoc, doc } from 'firebase/firestore';
 import { auth } from '../firebase';
+import HeaderView from './HeaderView.vue';
 
 export default {
+  components: {
+    HeaderView
+  },
   name: 'NotificationView',
   setup() {
     console.log('NotificationView setup called');
@@ -110,7 +115,8 @@ export default {
       notifications,
       handleNotificationClick,
       truncateMessage,
-      formatTime
+      formatTime,
+      HeaderView
     };
   }
 }
