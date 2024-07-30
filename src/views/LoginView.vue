@@ -19,7 +19,7 @@
 
 <script>
 import { mapActions } from 'vuex';
-
+import store from '../store';
 export default {
   data() {
     return {
@@ -33,6 +33,8 @@ export default {
     async loginUser() {
       try {
         await this.login({ email: this.email, password: this.password });
+        await store.dispatch('initializeApp');
+        console.log('Login successful'); 
         this.$router.push('/');
       } catch (error) {
         console.error('Login failed:', error);

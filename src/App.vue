@@ -28,23 +28,26 @@ export default {
     const agreedToPolicy = computed(() => store.state.agreedToPolicy);
 
     onMounted(async () => {
-      try {
-        await store.dispatch('initializeApp');
-        if (!isRegistered.value) {
-          if (!agreedToPolicy.value) {
-            router.push('/welcome');
-          } else {
-            router.push('/sms-verification');
-          }
-        } else {
-          // ユーザーが登録済みの場合、ホーム画面にリダイレクト
-          router.push('/');
-        }
-      } catch (error) {
-        console.error('Initialization error:', error);
-        // エラーハンドリング（例：エラーページへのリダイレクトなど）
+  try {
+    await store.dispatch('initializeApp');
+    
+    // initializeApp が成功した後に条件分岐を行う
+    if (!isRegistered.value) {
+      if (!agreedToPolicy.value) {
+        router.push('/welcome');
+      } else {
+        router.push('/sms-verification');
       }
-    });
+    } else {
+      // ユーザーが登録済みの場合、ホーム画面にリダイレクト
+      router.push('/');
+    }
+  } catch (error) {
+    console.error('Initialization error:', error);
+    // エラーハンドリング（例：エラーページへのリダイレクトなど）
+    router.push('/error'); // エラーページへのリダイレクト
+  }
+});
 
     return {
       isLoading

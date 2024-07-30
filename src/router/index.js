@@ -16,6 +16,7 @@ import ChatView from '../views/ChatView.vue';
 import ChatRoom from '../views/ChatRoom.vue';
 import { auth, db } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import store from '../store';
 
 const routes = [
   {
@@ -114,6 +115,7 @@ router.beforeEach(async (to, from, next) => {
   if (requiresAuth && !isAuthenticated) {
     next('/login');
   } else if (requiresGuest && isAuthenticated) {
+    await store.dispatch('initializeApp');
     next('/'); // ホームページにリダイレクト
   } else if (isAuthenticated) {
     try {

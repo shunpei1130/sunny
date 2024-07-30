@@ -84,6 +84,7 @@ export default {
     const currentDate = computed(() => new Date().toISOString().split('T')[0].replace(/-/g, '.'));
 
     onMounted(async() => {
+      
   // これらの呼び出しは削除します
   // await store.dispatch('fetchFollowData');
   // await store.dispatch('fetchProfile');
