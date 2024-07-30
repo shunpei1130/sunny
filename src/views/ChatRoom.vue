@@ -1,23 +1,24 @@
 <template>
-    <div class="chat-room">
-      <h2>{{ otherUser.username }}</h2>
-      <div class="messages" ref="messagesContainer">
-        <div v-for="message in messages" :key="message.id" :class="['message', { 'own-message': message.senderId === currentUser.uid }]">
-          <div class="message-content">{{ message.content }}</div>
-          <div class="message-time">{{ formatTime(message.createdAt) }}</div>
-        </div>
-      </div>
-      <div class="message-input">
-        <input v-model="newMessage" @keyup.enter="sendMessage" placeholder="メッセージを入力...">
-        <button @click="sendMessage">送信</button>
+  <div class="chat-room">
+    <h2>{{ otherUser.username }}</h2>
+    <div class="messages" ref="messagesContainer">
+      <div v-for="message in messages" :key="message.id" :class="['message', message.senderId === currentUser.uid ? 'own-message' : 'other-message']">
+        <div class="message-content">{{ message.content }}</div>
+        <div class="message-time">{{ formatTime(message.createdAt) }}</div>
       </div>
     </div>
-  </template>
+    <div class="message-input">
+      <input v-model="newMessage" @keyup.enter="sendMessage" placeholder="メッセージを入力...">
+      <button @click="sendMessage">送信</button>
+    </div>
+  </div>
+</template>
+
   
   <script>
   import { ref, onMounted, watch, nextTick } from 'vue';
   import { useRoute } from 'vue-router';
-  import { getFirestore, collection, query, orderBy, onSnapshot, addDoc, doc, getDoc } from 'firebase/firestore';
+  import { getFirestore, collection, query, orderBy, onSnapshot, addDoc, doc, getDoc,updateDoc } from 'firebase/firestore';
   import { auth } from '../firebase';
   
   export default {
@@ -140,60 +141,83 @@
   }
   </script>
   
-  <style scoped>
-  .chat-room {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-  }
-  
-  .messages {
-    flex-grow: 1;
-    overflow-y: auto;
-    padding: 20px;
-  }
-  
-  .message {
-    margin-bottom: 10px;
-    max-width: 70%;
-  }
-  
-  .own-message {
-    align-self: flex-end;
-    background-color: #DCF8C6;
-  }
-  
-  .message-content {
-    padding: 10px;
-    border-radius: 10px;
-    background-color: #F1F0F0;
-  }
-  
-  .message-time {
-    font-size: 0.8em;
-    color: #888;
-    text-align: right;
-  }
-  
-  .message-input {
-    display: flex;
-    padding: 10px;
-  }
-  
-  .message-input input {
-    flex-grow: 1;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 20px;
-  }
-  
-  .message-input button {
-    margin-left: 10px;
-    padding: 10px 20px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 20px;
-    cursor: pointer;
-  }
-  </style>
+ 
+<style scoped>
+.chat-room {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.message {
+  max-width: 70%;
+  margin-bottom: 10px;
+  padding: 10px;
+  border-radius: 20px;
+  word-wrap: break-word;
+}
+
+.own-message {
+  align-self: flex-end;
+  background-color: #DCF8C6;
+  margin-left: 30%;
+}
+
+.other-message {
+  align-self: flex-start;
+  background-color: #FFFFFF;
+  margin-right: 30%;
+}
+
+.message-content {
+  margin-bottom: 5px;
+}
+
+.message-time {
+  font-size: 0.8em;
+  color: #888;
+  text-align: right;
+}
+
+.message-input {
+  display: flex;
+  margin-top: 20px;
+}
+
+input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  margin-right: 10px;
+}
+
+button {
+  padding: 10px 20px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+</style>
