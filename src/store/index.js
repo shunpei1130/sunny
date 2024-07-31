@@ -1,5 +1,5 @@
 import { createStore } from 'vuex';
-import { auth, db,storage } from '../firebase';
+import { auth, db, storage } from '../firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { 
   doc, 
@@ -15,6 +15,7 @@ import {
   writeBatch, 
   query, 
   orderBy,
+  where // この行を追加
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
@@ -137,6 +138,7 @@ export default createStore({
         console.error("Error fetching profile from Firestore: ", e);
       }
     },
+  
     async register({ commit }, { email, password }) {
       console.log('register action called with email:', email);
       try {
@@ -147,6 +149,7 @@ export default createStore({
         throw error;
       }
     },
+  
     async login({ commit }, { email, password }) {
       console.log('login action called with email:', email);
       try {
@@ -157,6 +160,7 @@ export default createStore({
         throw error;
       }
     },
+  
     async logout({ commit }) {
       console.log('logout action called');
       try {
@@ -167,6 +171,7 @@ export default createStore({
         throw error;
       }
     },
+  
     initializeApp({ commit, dispatch }) {
       console.log('initializeApp action called');
       commit('setIsLoading', true);
@@ -179,17 +184,17 @@ export default createStore({
         commit('setIsLoading', false);
       });
     },
-    
-    
-   
+  
     addItemToCategory({ commit }, payload) {
       console.log('addItemToCategory action called with payload:', payload);
       commit('ADD_ITEM_TO_CATEGORY', payload);
     },
+  
     updateCategoryRotation({ commit }, payload) {
       console.log('updateCategoryRotation action called with payload:', payload);
       commit('UPDATE_CATEGORY_ROTATION', payload);
     },
+  
     async addPhotoToCategory({ state, commit }, { categoryNumber, file, description }) {
       try {
         const user = auth.currentUser;
@@ -222,7 +227,7 @@ export default createStore({
         throw error;
       }
     },
-
+  
     async fetchCategoryItems({ commit }) {
       try {
         const user = auth.currentUser;
@@ -243,6 +248,7 @@ export default createStore({
         console.error('Error fetching category items:', error);
       }
     },
+  
     async followUser({ commit, state }, userIdToFollow) {
       const currentUser = auth.currentUser;
       if (!currentUser) throw new Error('User not authenticated');
@@ -283,24 +289,24 @@ export default createStore({
         throw error;
       }
     },
-
+  
     async unfollowUser({ commit, state }, userIdToUnfollow) {
       const currentUser = auth.currentUser;
       if (!currentUser) return;
-
+  
       const userRef = doc(db, 'users', currentUser.uid);
       await updateDoc(userRef, {
         following: arrayRemove(userIdToUnfollow)
       });
-
+  
       const unfollowedUserRef = doc(db, 'users', userIdToUnfollow);
       await updateDoc(unfollowedUserRef, {
         followers: arrayRemove(currentUser.uid)
       });
-
+  
       commit('SET_FOLLOWING', state.following.filter(id => id !== userIdToUnfollow));
     },
-
+  
     async fetchFollowData({ commit }) {
       const currentUser = auth.currentUser;
       if (!currentUser) return;
@@ -325,7 +331,7 @@ export default createStore({
         commit('SET_FOLLOWERS', []);
       }
     },
-
+  
     async fetchTimelineItems({ commit, state }) {
       const user = auth.currentUser;
       if (!user) return;
@@ -382,7 +388,75 @@ export default createStore({
       } catch (error) {
         console.error('Error fetching timeline items:', error);
       }
-    }
+    },
+  
+    // uploadPhoto アクション
+async uploadPhoto(_, { file }) {  // state を削除し、_ に変更
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error('User not authenticated');
+
+    // Upload image to Firebase Storage
+    const storageRef = ref(storage, `users/${user.uid}/photos/${Date.now()}`);
+    await uploadBytes(storageRef, file);
+    const imageUrl = await getDownloadURL(storageRef);
+
+    return imageUrl;
+  } catch (error) {
+    console.error('Error uploading photo:', error);
+    throw error;
+  }
+},
+
+// fetchChatRooms アクション
+async fetchChatRooms() { // state パラメータを削除
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error('User not authenticated');
+
+    console.log('Fetching chat rooms for user:', user.uid);
+
+    const chatRoomsRef = collection(db, 'chatRooms');
+    const q = query(chatRoomsRef, where('participants', 'array-contains', user.uid));
+    const querySnapshot = await getDocs(q);
+    
+    const chatRooms = [];
+    querySnapshot.forEach((doc) => {
+      chatRooms.push({ id: doc.id, ...doc.data() });
+    });
+
+    console.log('Fetched chat rooms:', chatRooms);
+
+    return chatRooms;
+  } catch (error) {
+    console.error('Error fetching chat rooms:', error);
+    throw error;
+  }
+},
+
+// addPhotoToChatRoom アクション
+async addPhotoToChatRoom({ rootState }, { chatRoomId, imageUrl, description }) {
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error('User not authenticated');
+
+    const chatRoomRef = doc(db, 'chatRooms', chatRoomId);
+    await updateDoc(chatRoomRef, {
+      photos: arrayUnion({
+        imageUrl,
+        description,
+        timestamp: new Date(),
+        userId: user.uid,
+        username: rootState.profile.username
+      })
+    });
+
+    console.log('Photo added to chat room successfully');
+  } catch (error) {
+    console.error('Error adding photo to chat room:', error);
+    throw error;
+  }
+},
   },
   getters: {
     // 必要に応じてgettersを追加

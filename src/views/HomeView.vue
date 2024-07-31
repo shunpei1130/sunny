@@ -55,6 +55,13 @@
         </div>
       </div>
     </div>
+
+    <ChatRoomSelectDialog 
+    v-if="showChatRoomDialog"
+    :chatRooms="chatRooms"
+    @select="handleChatRoomSelect"
+    @close="showChatRoomDialog = false"
+  />
     <FooterView />
   </div>
   
@@ -68,13 +75,15 @@ import { useStore } from 'vuex';
 import HeaderView from './HeaderView.vue';
 import FooterView from './FooterView.vue';
 import TimelineItem from './TimelineItem.vue';
+import ChatRoomSelectDialog from './ChatRoomSelectDialog.vue';
 
 export default {
   name: 'HomeView',
   components: {
     HeaderView,
     FooterView,
-    TimelineItem
+    TimelineItem,
+    ChatRoomSelectDialog
   },
   setup() {
     const store = useStore();
@@ -85,23 +94,25 @@ export default {
     const timelineItems = computed(() => store.state.timelineItems);
     const currentDate = computed(() => new Date().toISOString().split('T')[0].replace(/-/g, '.'));
 
-    onMounted(async() => {
-      console.log('Profile fetched:', store.state.profile);
-      console.log('store!!!:', JSON.parse(JSON.stringify(store.state)));
-    });
-
-    // プルトゥリフレッシュの状態管理
     const pullDistance = ref(0);
     const isPulling = ref(false);
     const isRefreshing = ref(false);
-    const pullThreshold = 60; // ピクセル単位でのしきい値
-
-    
+    const pullThreshold = 60;
 
     const startX = ref(0);
     const startY = ref(0);
     const isHorizontalScroll = ref(false);
     const activeCategory = ref(null);
+
+    const chatRooms = ref([]);
+    const selectedChatRoomId = ref(null);
+    const showChatRoomDialog = ref(false);
+    let resolveSelectPromise = null;
+
+    onMounted(async() => {
+      console.log('Profile fetched:', store.state.profile);
+      console.log('store!!!:', JSON.parse(JSON.stringify(store.state)));
+    });
 
     const handleTouchStart = (event) => {
       startX.value = event.touches[0].clientX;
@@ -126,7 +137,6 @@ export default {
         event.preventDefault();
       } else if (isHorizontalScroll.value) {
         event.preventDefault();
-        // カルーセルのアクティブなカテゴリを特定
         const categoryElements = document.querySelectorAll('.category');
         categoryElements.forEach((el, index) => {
           if (el.contains(event.target)) {
@@ -149,7 +159,7 @@ export default {
         const endX = event.changedTouches[0].clientX;
         const diffX = startX.value - endX;
 
-        if (Math.abs(diffX) > 50) {
+        if (Math.abs(diffX) > 60) {
           const direction = diffX > 0 ? 'left' : 'right';
           rotateCarousel(activeCategory.value, activeCategory.value === category1.value ? 1 : 2, direction);
         }
@@ -158,11 +168,6 @@ export default {
 
     const refresh = async () => {
       try {
-         // これらの呼び出しは削除します
-  // await store.dispatch('fetchFollowData');
-  // await store.dispatch('fetchProfile');
-  // await store.dispatch('fetchTimelineItems');
-  // store.dispatch('fetchCategoryItems');
         await store.dispatch('fetchTimelineItems');
         console.log('App refreshed successfully');
       } catch (error) {
@@ -170,7 +175,6 @@ export default {
       }
     };
 
-    // 最新のアイテムを取得する関数
     const getLatestItems = (items, count) => {
       return [...items].sort((a, b) => b.timestamp - a.timestamp).slice(0, count);
     };
@@ -183,6 +187,23 @@ export default {
           if (file) {
             const hashtag = categoryNumber === 1 ? profile.value.hashtag1 : profile.value.hashtag2;
             const description = `#${hashtag || `Category${categoryNumber}`}`;
+            
+            // 写真をアップロードし、URLを取得
+            const imageUrl = await store.dispatch('uploadPhoto', { file, description });
+            
+            // チャットルーム一覧を取得し、選択ダイアログを表示
+            const selectedChatRoom = await selectChatRoom();
+            
+            if (selectedChatRoom) {
+              // 選択されたチャットルームに写真を追加
+              await store.dispatch('addPhotoToChatRoom', { 
+                chatRoomId: selectedChatRoom.id, 
+                imageUrl, 
+                description 
+              });
+            }
+            
+            // カテゴリーに写真を追加（既存の機能）
             await store.dispatch('addPhotoToCategory', { 
               categoryNumber, 
               file, 
@@ -193,16 +214,76 @@ export default {
       }
     };
 
+    const selectChatRoom = async () => {
+      chatRooms.value = await store.dispatch('fetchChatRooms');
+      console.log('Chat rooms in component:', chatRooms.value);
+      showChatRoomDialog.value = true;
+      
+      return new Promise((resolve) => {
+        resolveSelectPromise = resolve;
+      });
+    };
+
+    const handleChatRoomSelect = (roomId) => {
+      selectedChatRoomId.value = roomId;
+      showChatRoomDialog.value = false;
+      if (resolveSelectPromise) {
+        resolveSelectPromise(chatRooms.value.find(room => room.id === roomId));
+        resolveSelectPromise = null;
+      }
+    };
+
     const rotateCarousel = (category, categoryNumber, direction) => {
       if (direction === 'left') {
-        category.currdeg -= 60;
+        category.currdeg -= 30;
       } else {
-        category.currdeg += 60;
+        category.currdeg += 30;
       }
       store.dispatch('updateCategoryRotation', {
         categoryNumber,
         currdeg: category.currdeg
       });
+    };
+
+
+    const touchStart = (event) => {
+      startX.value = event.touches[0].clientX;
+      startY.value = event.touches[0].clientY;
+      isHorizontalScroll.value = false;
+    };
+
+    const touchMove = (event) => {
+  const currentX = event.touches[0].clientX;
+  const currentY = event.touches[0].clientY;
+  const diffX = startX.value - currentX;
+  const diffY = startY.value - currentY;
+
+  if (!isHorizontalScroll.value) {
+    isHorizontalScroll.value = Math.abs(diffX) > Math.abs(diffY);
+  }
+
+  if (!isHorizontalScroll.value) {
+    return;
+  }
+
+  event.preventDefault();
+};
+
+    const touchEnd = (event, category, categoryNumber) => {
+      if (!isHorizontalScroll.value) {
+        return;
+      }
+
+      const endX = event.changedTouches[0].clientX;
+      const diffX = startX.value - endX;
+
+      if (Math.abs(diffX) > 50) {
+        if (diffX > 0) {
+          rotateCarousel(category, categoryNumber, 'left');
+        } else {
+          rotateCarousel(category, categoryNumber, 'right');
+        }
+      }
     };
 
     const getItemClass = (index) => {
@@ -228,7 +309,15 @@ export default {
       handleTouchStart,
       handleTouchMove,
       handleTouchEnd,
-      isRefreshing, // この行を追加
+      handleChatRoomSelect,
+      isRefreshing,
+      chatRooms,
+      selectedChatRoomId,
+      showChatRoomDialog,
+      touchStart,
+      touchMove,
+      touchEnd,
+      onChatRoomSelect: (roomId) => onChatRoomSelect.value(roomId),
     };
   }
 };
