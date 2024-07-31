@@ -32,6 +32,7 @@ export default createStore({
       age: '',
       photo: '',
     },
+    chatRooms: [], // チャットルーム用のステートを追加
     user: null,
     isLoading: true,
     isRegistered: false,
@@ -114,6 +115,9 @@ export default createStore({
     SET_TIMELINE_ITEMS(state, items) {
       state.timelineItems = items;
     },
+    SET_CHAT_ROOMS(state, chatRooms) {
+      state.chatRooms = chatRooms;
+    },
   },
 
   
@@ -184,6 +188,7 @@ export default createStore({
         commit('setIsLoading', false);
       });
     },
+    
   
     addItemToCategory({ commit }, payload) {
       console.log('addItemToCategory action called with payload:', payload);
@@ -409,7 +414,7 @@ async uploadPhoto(_, { file }) {  // state を削除し、_ に変更
 },
 
 // fetchChatRooms アクション
-async fetchChatRooms() { // state パラメータを削除
+async fetchChatRooms({ commit}) {
   try {
     const user = auth.currentUser;
     if (!user) throw new Error('User not authenticated');
@@ -421,12 +426,24 @@ async fetchChatRooms() { // state パラメータを削除
     const querySnapshot = await getDocs(q);
     
     const chatRooms = [];
-    querySnapshot.forEach((doc) => {
-      chatRooms.push({ id: doc.id, ...doc.data() });
-    });
+    for (const document of querySnapshot.docs) {
+      const roomData = document.data();
+      const otherParticipants = roomData.participants.filter(id => id !== user.uid);
+      const otherUsernames = await Promise.all(otherParticipants.map(async (userId) => {
+        const userDocRef = doc(db, 'profiles', userId);
+        const userDocSnap = await getDoc(userDocRef);
+        return userDocSnap.exists() ? userDocSnap.data().username : 'Unknown User';
+      }));
+
+      chatRooms.push({
+        id: document.id,
+        ...roomData,
+        otherUsernames
+      });
+    }
 
     console.log('Fetched chat rooms:', chatRooms);
-
+    commit('SET_CHAT_ROOMS', chatRooms);
     return chatRooms;
   } catch (error) {
     console.error('Error fetching chat rooms:', error);

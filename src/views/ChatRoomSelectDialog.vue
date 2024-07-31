@@ -8,8 +8,7 @@
         <div v-else class="chat-room-list">
           <ul>
             <li v-for="room in chatRooms" :key="room.id" @click="selectRoom(room.id)">
-              {{ room.name || `Chat Room ${room.id}` }}
-              (ID: {{ room.id }})
+              {{ room.otherUsernames.join(', ') }}
             </li>
           </ul>
         </div>
@@ -43,6 +42,7 @@
     }
   });
   </script>
+  
   
   
   <style scoped>
