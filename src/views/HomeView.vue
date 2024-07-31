@@ -1,5 +1,8 @@
 <template>
-  <div class="top">
+  <div class="top" @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd">
+    <div class="pull-to-refresh" :style="{ transform: `translateY(${pullDistance - 60}px)` }">
+      <div v-if="isRefreshing" class="loading-spinner"></div>
+    </div>
     <HeaderView />
     <div class="content">
       <div class="existing-content">
@@ -74,7 +77,6 @@ export default {
     TimelineItem
   },
   setup() {
-    
     const store = useStore();
     const fileInput = ref(null);
     const profile = computed(() => store.state.profile);
@@ -84,17 +86,89 @@ export default {
     const currentDate = computed(() => new Date().toISOString().split('T')[0].replace(/-/g, '.'));
 
     onMounted(async() => {
-      
-  // これらの呼び出しは削除します
+      console.log('Profile fetched:', store.state.profile);
+      console.log('store!!!:', JSON.parse(JSON.stringify(store.state)));
+    });
+
+    // プルトゥリフレッシュの状態管理
+    const pullDistance = ref(0);
+    const isPulling = ref(false);
+    const isRefreshing = ref(false);
+    const pullThreshold = 60; // ピクセル単位でのしきい値
+
+    
+
+    const startX = ref(0);
+    const startY = ref(0);
+    const isHorizontalScroll = ref(false);
+    const activeCategory = ref(null);
+
+    const handleTouchStart = (event) => {
+      startX.value = event.touches[0].clientX;
+      startY.value = event.touches[0].clientY;
+      isHorizontalScroll.value = false;
+      isPulling.value = window.scrollY === 0;
+      activeCategory.value = null;
+    };
+
+    const handleTouchMove = (event) => {
+      const currentX = event.touches[0].clientX;
+      const currentY = event.touches[0].clientY;
+      const diffX = startX.value - currentX;
+      const diffY = startY.value - currentY;
+
+      if (!isHorizontalScroll.value && !isPulling.value) {
+        isHorizontalScroll.value = Math.abs(diffX) > Math.abs(diffY);
+      }
+
+      if (isPulling.value) {
+        pullDistance.value = Math.max(0, Math.min((currentY - startY.value) / 2, pullThreshold * 1.5));
+        event.preventDefault();
+      } else if (isHorizontalScroll.value) {
+        event.preventDefault();
+        // カルーセルのアクティブなカテゴリを特定
+        const categoryElements = document.querySelectorAll('.category');
+        categoryElements.forEach((el, index) => {
+          if (el.contains(event.target)) {
+            activeCategory.value = index === 0 ? category1.value : category2.value;
+          }
+        });
+      }
+    };
+
+    const handleTouchEnd = async (event) => {
+      if (isPulling.value) {
+        if (pullDistance.value >= pullThreshold && !isRefreshing.value) {
+          isRefreshing.value = true;
+          await refresh();
+        }
+        pullDistance.value = 0;
+        isPulling.value = false;
+        isRefreshing.value = false;
+      } else if (isHorizontalScroll.value && activeCategory.value) {
+        const endX = event.changedTouches[0].clientX;
+        const diffX = startX.value - endX;
+
+        if (Math.abs(diffX) > 50) {
+          const direction = diffX > 0 ? 'left' : 'right';
+          rotateCarousel(activeCategory.value, activeCategory.value === category1.value ? 1 : 2, direction);
+        }
+      }
+    };
+
+    const refresh = async () => {
+      try {
+         // これらの呼び出しは削除します
   // await store.dispatch('fetchFollowData');
   // await store.dispatch('fetchProfile');
   // await store.dispatch('fetchTimelineItems');
   // store.dispatch('fetchCategoryItems');
-  
-  console.log('Profile fetched:', store.state.profile);
-  console.log('store!!!:', JSON.parse(JSON.stringify(store.state)));
-});
-    
+        await store.dispatch('fetchTimelineItems');
+        console.log('App refreshed successfully');
+      } catch (error) {
+        console.error('Error refreshing app:', error);
+      }
+    };
 
     // 最新のアイテムを取得する関数
     const getLatestItems = (items, count) => {
@@ -131,50 +205,6 @@ export default {
       });
     };
 
-    const startX = ref(0);
-    const startY = ref(0);
-    const isHorizontalScroll = ref(false);
-
-    const touchStart = (event) => {
-      startX.value = event.touches[0].clientX;
-      startY.value = event.touches[0].clientY;
-      isHorizontalScroll.value = false;
-    };
-
-    const touchMove = (event) => {
-      const currentX = event.touches[0].clientX;
-      const currentY = event.touches[0].clientY;
-      const diffX = startX.value - currentX;
-      const diffY = startY.value - currentY;
-
-      if (!isHorizontalScroll.value) {
-        isHorizontalScroll.value = Math.abs(diffX) > Math.abs(diffY);
-      }
-
-      if (!isHorizontalScroll.value) {
-        return;
-      }
-
-      event.preventDefault();
-    };
-
-    const touchEnd = (event, category, categoryNumber) => {
-      if (!isHorizontalScroll.value) {
-        return;
-      }
-
-      const endX = event.changedTouches[0].clientX;
-      const diffX = startX.value - endX;
-
-      if (Math.abs(diffX) > 50) {
-        if (diffX > 0) {
-          rotateCarousel(category, categoryNumber, 'left');
-        } else {
-          rotateCarousel(category, categoryNumber, 'right');
-        }
-      }
-    };
-
     const getItemClass = (index) => {
       const classes = ['a', 'b', 'c', 'd', 'e', 'f'];
       return classes[index % classes.length];
@@ -192,20 +222,47 @@ export default {
       rightColumnItems,
       fileInput,
       addPhotoToCategory,
-      touchStart,
-      touchMove,
-      touchEnd,
       getItemClass,
-      getLatestItems
+      getLatestItems,
+      pullDistance,
+      handleTouchStart,
+      handleTouchMove,
+      handleTouchEnd,
+      isRefreshing, // この行を追加
     };
   }
 };
-
 </script>
 
 
 
 <style scoped>
+
+.pull-to-refresh {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 60px;
+  pointer-events: none;
+}
+
+.loading-spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 
 .child-image {
   width: 100%;

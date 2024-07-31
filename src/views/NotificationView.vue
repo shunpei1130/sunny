@@ -2,11 +2,11 @@
   <HeaderView />
   <div class="notification-view">
     <h2>通知</h2>
-    <div v-if="notifications.length === 0" class="no-notifications">
+    <div v-if="notificationsWithProfiles && notificationsWithProfiles.length === 0" class="no-notifications">
       新しい通知はありません
     </div>
-    <ul v-else class="notification-list">
-      <li v-for="notification in notifications" :key="notification.id" class="notification-item">
+    <ul v-else-if="notificationsWithProfiles && notificationsWithProfiles.length > 0" class="notification-list">
+      <li v-for="notification in notificationsWithProfiles" :key="notification.id" class="notification-item">
         <div class="notification-content" @click="handleNotificationClick(notification)">
           <img :src="notification.senderPhoto" :alt="notification.senderName" class="sender-photo">
           <div class="notification-text">
@@ -17,13 +17,16 @@
         <div class="notification-time">{{ formatTime(notification.timestamp) }}</div>
       </li>
     </ul>
+    <div v-else class="loading">
+      読み込み中...
+    </div>
   </div>
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { getFirestore, collection, query, where, onSnapshot, orderBy, limit, updateDoc, doc } from 'firebase/firestore';
+import { getFirestore, collection, query, where, onSnapshot, orderBy, limit, updateDoc, doc, getDoc } from 'firebase/firestore';
 import { auth } from '../firebase';
 import HeaderView from './HeaderView.vue';
 
@@ -33,44 +36,58 @@ export default {
   },
   name: 'NotificationView',
   setup() {
-    console.log('NotificationView setup called');
     const router = useRouter();
     const notifications = ref([]);
+    const profiles = ref({});
     let unsubscribe = null;
 
     const fetchNotifications = () => {
-  console.log('Fetching notifications');
-  const db = getFirestore();
-  const user = auth.currentUser;
-  if (!user) {
-    console.log('No authenticated user');
-    return;
-  }
-  console.log('Current user ID:', user.uid);
+      const db = getFirestore();
+      const user = auth.currentUser;
+      if (!user) {
+        console.log('No authenticated user');
+        return;
+      }
 
-  const notificationsRef = collection(db, 'notifications');
-  const q = query(
-    notificationsRef,
-    where('recipientId', '==', user.uid),
-    where('read', '==', false),
-    orderBy('timestamp', 'desc'),
-    limit(20)
-  );
+      const notificationsRef = collection(db, 'notifications');
+      const q = query(
+        notificationsRef,
+        where('recipientId', '==', user.uid),
+        where('read', '==', false),
+        orderBy('timestamp', 'desc'),
+        limit(20)
+      );
 
-  unsubscribe = onSnapshot(q, (snapshot) => {
-    console.log('Snapshot received, document count:', snapshot.docs.length);
-    notifications.value = snapshot.docs.map(doc => {
-      console.log('Notification document:', doc.id, doc.data());
-      return {
-        id: doc.id,
-        ...doc.data()
-      };
+      unsubscribe = onSnapshot(q, async (snapshot) => {
+        const notificationsData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        
+        // Fetch profiles for each unique sender
+        const uniqueSenderIds = [...new Set(notificationsData.map(n => n.senderId))];
+        for (const senderId of uniqueSenderIds) {
+          if (!profiles.value[senderId]) {
+            const profileDoc = await getDoc(doc(db, 'profiles', senderId));
+            if (profileDoc.exists()) {
+              profiles.value[senderId] = profileDoc.data();
+            }
+          }
+        }
+
+        notifications.value = notificationsData;
+      }, (error) => {
+        console.error('Error fetching notifications:', error);
+      });
+    };
+
+    const notificationsWithProfiles = computed(() => {
+      return notifications.value.map(notification => ({
+        ...notification,
+        senderName: profiles.value[notification.senderId]?.username || 'Unknown User',
+        senderPhoto: profiles.value[notification.senderId]?.photoURL || 'default-avatar.png'
+      }));
     });
-    console.log('Fetched notifications:', notifications.value);
-  }, (error) => {
-    console.error('Error fetching notifications:', error);
-  });
-};
 
     const handleNotificationClick = async (notification) => {
       console.log('Notification clicked:', notification);
@@ -112,11 +129,10 @@ export default {
     });
 
     return {
-      notifications,
+      notificationsWithProfiles,
       handleNotificationClick,
       truncateMessage,
       formatTime,
-      HeaderView
     };
   }
 }
@@ -147,13 +163,14 @@ export default {
   display: flex;
   align-items: center;
   cursor: pointer;
+  text-align: left;
 }
 
 .sender-photo {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  margin-right: 10px;
+  margin-right: 27px;
 }
 
 .notification-text {
