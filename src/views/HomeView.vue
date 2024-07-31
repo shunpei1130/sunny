@@ -1,6 +1,6 @@
 <template>
   <div class="top" @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd">
-    <div class="pull-to-refresh" :style="{ transform: `translateY(${pullDistance - 60}px)` }">
+    <div class="pull-to-refresh" :style="{ transform: `translateY(${pullDistance - 50}px)` }">
       <div v-if="isRefreshing" class="loading-spinner"></div>
     </div>
     <HeaderView />
