@@ -1,5 +1,5 @@
 <template>
-  <div class="top" @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd">
+  <div class="top" @touchstart="handlePullTouchStart" @touchmove="handlePullTouchMove" @touchend="handlePullTouchEnd">
     <div class="pull-to-refresh" :style="{ transform: `translateY(${pullDistance - 50}px)` }">
       <div v-if="isRefreshing" class="loading-spinner"></div>
     </div>
@@ -10,7 +10,7 @@
         <div v-for="(category, index) in [category1, category2]" :key="category.name" class="category" :class="`category-${index + 1}`">
           <div class="category-title">#{{ index === 0 ? profile.hashtag1 : profile.hashtag2 || category.name }}</div>
 
-          <div class="container" ref="categoryContainer" @touchstart="touchStart" @touchmove="touchMove" @touchend="(e) => touchEnd(e, category, index + 1)">
+          <div class="container" ref="categoryContainer" @touchstart="handleCarouselTouchStart" @touchmove="handleCarouselTouchMove" @touchend="(e) => handleCarouselTouchEnd(e, category, index + 1)">
             <div class="carousel" :style="{ transform: `rotateY(${category.currdeg}deg)` }">
               <div v-if="!category.items.length" class="item a empty-item" @click="() => addPhotoToCategory(category, index + 1)">
                 <!-- Empty item content -->
@@ -94,15 +94,19 @@ export default {
     const timelineItems = computed(() => store.state.timelineItems);
     const currentDate = computed(() => new Date().toISOString().split('T')[0].replace(/-/g, '.'));
 
+
+
+
+    const carouselTouchStart = ref({ x: 0, y: 0 });
+    const isHorizontalScroll = ref(false);
+
+
+    // プルトゥリフレッシュ用のタッチイベント
+    const pullTouchStart = ref({ x: 0, y: 0 });
     const pullDistance = ref(0);
     const isPulling = ref(false);
     const isRefreshing = ref(false);
     const pullThreshold = 60;
-
-    const startX = ref(0);
-    const startY = ref(0);
-    const isHorizontalScroll = ref(false);
-    const activeCategory = ref(null);
 
     const chatRooms = ref([]);
     const selectedChatRoomId = ref(null);
@@ -114,39 +118,73 @@ export default {
       console.log('store!!!:', JSON.parse(JSON.stringify(store.state)));
     });
 
-    const handleTouchStart = (event) => {
-      startX.value = event.touches[0].clientX;
-      startY.value = event.touches[0].clientY;
-      isHorizontalScroll.value = false;
-      isPulling.value = window.scrollY === 0;
-      activeCategory.value = null;
+
+
+    const rotateCarousel = (category, categoryNumber, direction) => {
+      if (direction === 'left') {
+        category.currdeg -= 60;
+      } else {
+        category.currdeg += 60;
+      }
+      store.dispatch('updateCategoryRotation', {
+        categoryNumber,
+        currdeg: category.currdeg
+      });
     };
 
-    const handleTouchMove = (event) => {
+
+    const handleCarouselTouchStart = (event) => {
+      carouselTouchStart.value.x = event.touches[0].clientX;
+      carouselTouchStart.value.y = event.touches[0].clientY;
+      isHorizontalScroll.value = false;
+    };
+
+    const handleCarouselTouchMove = (event) => {
       const currentX = event.touches[0].clientX;
       const currentY = event.touches[0].clientY;
-      const diffX = startX.value - currentX;
-      const diffY = startY.value - currentY;
+      const diffX = carouselTouchStart.value.x - currentX;
+      const diffY = carouselTouchStart.value.y - currentY;
 
-      if (!isHorizontalScroll.value && !isPulling.value) {
+      if (!isHorizontalScroll.value) {
         isHorizontalScroll.value = Math.abs(diffX) > Math.abs(diffY);
       }
 
-      if (isPulling.value) {
-        pullDistance.value = Math.max(0, Math.min((currentY - startY.value) / 2, pullThreshold * 1.5));
+      if (isHorizontalScroll.value) {
         event.preventDefault();
-      } else if (isHorizontalScroll.value) {
-        event.preventDefault();
-        const categoryElements = document.querySelectorAll('.category');
-        categoryElements.forEach((el, index) => {
-          if (el.contains(event.target)) {
-            activeCategory.value = index === 0 ? category1.value : category2.value;
-          }
-        });
       }
     };
 
-    const handleTouchEnd = async (event) => {
+    const handleCarouselTouchEnd = (event, category, categoryNumber) => {
+      if (!isHorizontalScroll.value) {
+        return;
+      }
+
+      const endX = event.changedTouches[0].clientX;
+      const diffX = carouselTouchStart.value.x - endX;
+
+      if (Math.abs(diffX) > 50) {
+        if (diffX > 0) {
+          rotateCarousel(category, categoryNumber, 'left');
+        } else {
+          rotateCarousel(category, categoryNumber, 'right');
+        }
+      }
+    };
+
+    const handlePullTouchStart = (event) => {
+      pullTouchStart.value.x = event.touches[0].clientX;
+      pullTouchStart.value.y = event.touches[0].clientY;
+      isPulling.value = window.scrollY === 0;
+    };
+
+    const handlePullTouchMove = (event) => {
+      if (!isPulling.value) return;
+
+      const currentY = event.touches[0].clientY;
+      pullDistance.value = Math.max(0, Math.min((currentY - pullTouchStart.value.y) / 2, pullThreshold * 1.5));
+    };
+
+    const handlePullTouchEnd = async () => {
       if (isPulling.value) {
         if (pullDistance.value >= pullThreshold && !isRefreshing.value) {
           isRefreshing.value = true;
@@ -155,14 +193,6 @@ export default {
         pullDistance.value = 0;
         isPulling.value = false;
         isRefreshing.value = false;
-      } else if (isHorizontalScroll.value && activeCategory.value) {
-        const endX = event.changedTouches[0].clientX;
-        const diffX = startX.value - endX;
-
-        if (Math.abs(diffX) > 60) {
-          const direction = diffX > 0 ? 'left' : 'right';
-          rotateCarousel(activeCategory.value, activeCategory.value === category1.value ? 1 : 2, direction);
-        }
       }
     };
 
@@ -233,58 +263,7 @@ export default {
       }
     };
 
-    const rotateCarousel = (category, categoryNumber, direction) => {
-      if (direction === 'left') {
-        category.currdeg -= 30;
-      } else {
-        category.currdeg += 30;
-      }
-      store.dispatch('updateCategoryRotation', {
-        categoryNumber,
-        currdeg: category.currdeg
-      });
-    };
-
-
-    const touchStart = (event) => {
-      startX.value = event.touches[0].clientX;
-      startY.value = event.touches[0].clientY;
-      isHorizontalScroll.value = false;
-    };
-
-    const touchMove = (event) => {
-  const currentX = event.touches[0].clientX;
-  const currentY = event.touches[0].clientY;
-  const diffX = startX.value - currentX;
-  const diffY = startY.value - currentY;
-
-  if (!isHorizontalScroll.value) {
-    isHorizontalScroll.value = Math.abs(diffX) > Math.abs(diffY);
-  }
-
-  if (!isHorizontalScroll.value) {
-    return;
-  }
-
-  event.preventDefault();
-};
-
-    const touchEnd = (event, category, categoryNumber) => {
-      if (!isHorizontalScroll.value) {
-        return;
-      }
-
-      const endX = event.changedTouches[0].clientX;
-      const diffX = startX.value - endX;
-
-      if (Math.abs(diffX) > 50) {
-        if (diffX > 0) {
-          rotateCarousel(category, categoryNumber, 'left');
-        } else {
-          rotateCarousel(category, categoryNumber, 'right');
-        }
-      }
-    };
+    
 
     const getItemClass = (index) => {
       const classes = ['a', 'b', 'c', 'd', 'e', 'f'];
@@ -306,17 +285,17 @@ export default {
       getItemClass,
       getLatestItems,
       pullDistance,
-      handleTouchStart,
-      handleTouchMove,
-      handleTouchEnd,
       handleChatRoomSelect,
       isRefreshing,
       chatRooms,
       selectedChatRoomId,
       showChatRoomDialog,
-      touchStart,
-      touchMove,
-      touchEnd,
+      handleCarouselTouchStart,
+      handleCarouselTouchMove,
+      handleCarouselTouchEnd,
+      handlePullTouchStart,
+      handlePullTouchMove,
+      handlePullTouchEnd,
       onChatRoomSelect: (roomId) => onChatRoomSelect.value(roomId),
     };
   }
