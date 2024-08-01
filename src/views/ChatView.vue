@@ -25,10 +25,7 @@
     </div>
 
     <!-- チャットリストと特定のチャットルーム情報 -->
-    <div v-else>
-      <!-- チャットリスト -->
-      
-
+    
       <!-- 特定のチャットルーム情報 -->
       <div v-if="specificChatRoom && !isSearching" class="specific-chat-room">
     <div 
@@ -44,7 +41,8 @@
       </div>
     </div>
   </div>
-    </div>
+    
+  
   </div>
 </template>
 

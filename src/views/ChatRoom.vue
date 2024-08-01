@@ -1,10 +1,20 @@
 <template>
   <div class="chat-room">
+    <div class="chat-header">
+    <button class="back-button" @click="goBack">＜</button>
     <h2>{{ otherUser.username }}</h2>
+  </div>
     <div class="messages" ref="messagesContainer">
       <div v-for="message in messages" :key="message.id" :class="['message', message.senderId === currentUser.uid ? 'own-message' : 'other-message']">
-        <div class="message-content">{{ message.content }}</div>
-        <div class="message-time">{{ formatTime(message.createdAt) }}</div>
+        <div class="message-wrapper">
+          <div v-if="message.senderId !== currentUser.uid" class="user-info">
+            <img :src="otherUserPhoto" alt="User Icon" class="user-icon">
+          </div>
+          <div class="message-content-wrapper">
+            <div class="message-content">{{ message.content }}</div>
+            <div class="message-time">{{ formatTime(message.createdAt) }}</div>
+          </div>
+        </div>
       </div>
     </div>
     <div class="message-input">
@@ -23,6 +33,13 @@
   
   export default {
     name: 'ChatRoom',
+    methods: {
+    // ... 既存のメソッド ...
+    goBack() {
+      // ここに戻る機能を実装
+      this.$router.go(-1);
+    }
+  },
     setup() {
       const route = useRoute();
       const db = getFirestore();
@@ -30,6 +47,7 @@
       const newMessage = ref('');
       const currentUser = auth.currentUser;
       const otherUser = ref({});
+      const otherUserPhoto = ref('');
       const messagesContainer = ref(null);
   
       const chatRoomId = route.params.id;
@@ -107,18 +125,20 @@
         loadMessages();
   
         // 相手のユーザー情報を取得
-        const chatRoomRef = doc(db, 'chatRooms', chatRoomId);
-        const chatRoomSnap = await getDoc(chatRoomRef);
-        if (chatRoomSnap.exists()) {
-          const participants = chatRoomSnap.data().participants;
-          const otherUserId = participants.find(id => id !== currentUser.uid);
-          const userRef = doc(db, 'profiles', otherUserId);
-          const userSnap = await getDoc(userRef);
-          if (userSnap.exists()) {
-            otherUser.value = { id: userSnap.id, ...userSnap.data() };
-          }
+        // 相手のユーザー情報を取得
+      const chatRoomRef = doc(db, 'chatRooms', chatRoomId);
+      const chatRoomSnap = await getDoc(chatRoomRef);
+      if (chatRoomSnap.exists()) {
+        const participants = chatRoomSnap.data().participants;
+        const otherUserId = participants.find(id => id !== currentUser.uid);
+        const userRef = doc(db, 'profiles', otherUserId);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          otherUser.value = { id: userSnap.id, ...userSnap.data() };
+          otherUserPhoto.value = userSnap.data().photo || userSnap.data().photoURL;
         }
-      });
+      }
+    });
   
       watch(messages, () => {
         nextTick(() => {
@@ -135,89 +155,164 @@
         formatTime,
         currentUser,
         otherUser,
-        messagesContainer
+        messagesContainer,
+        otherUserPhoto
       };
     }
   }
   </script>
   
- 
-<style scoped>
+
+
+  <style scoped>
 .chat-room {
   display: flex;
   flex-direction: column;
   height: 100vh;
   max-width: 800px;
   margin: 0 auto;
-  padding: 20px;
+  position: relative;
+}
+  
+  .chat-header {
+  display: flex;
+  align-items: center;
+  padding: 10px 20px;
+  background-color: #f5f5f5;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.back-button {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0 10px 0 0;
+  color: #333;
 }
 
 h2 {
+  margin: 0;
+  flex-grow: 1;
   text-align: center;
-  margin-bottom: 20px;
+}
+  
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .message {
+    margin-bottom: 15px;
+    max-width: 70%;
+  }
+  
+  .message-wrapper {
+    display: flex;
+  }
+  
+  .own-message {
+    align-self: flex-end;
+  }
+  
+  .other-message {
+    align-self: flex-start;
+  }
+  
+  .user-info {
+    margin-right: 10px;
+  }
+  
+  .user-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+  
+  .message-content-wrapper {
+    display: flex;
+    flex-direction: column;
+    max-width: 100%;
+  }
+  
+  .username {
+    font-size: 0.8em;
+    margin-bottom: 5px;
+    color: #888;
+  }
+  
+  .message-content {
+    padding: 10px 15px;
+    border-radius: 18px;
+    word-wrap: break-word;
+    max-width: 100%;
+  }
+  
+  .own-message .message-content {
+    background-color: #DCF8C6;
+    margin-left: auto;
+    border-radius: 18px;
+  }
+  
+  .other-message .message-content {
+  position: relative;
+  background-color: #dfd9d9;
+  margin-right: auto;
+  margin-left: 15px; /* 左側にスペースを追加 */
 }
 
-.messages {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
+.other-message .message-content::before {
+  content: "";
+  position: absolute;
+  left: -9px; /* 左側に移動 */
+  top: 15px; /* 上部に移動 */
+  width: 0;
+  height: 0;
+  border: 10px solid transparent;
+  border-right-color: #dfd9d9;
+  border-left: 0;
+  border-top: 0; /* 上部を平らにする */
 }
-
-.message {
-  max-width: 70%;
-  margin-bottom: 10px;
-  padding: 10px;
-  border-radius: 20px;
-  word-wrap: break-word;
-}
-
-.own-message {
-  align-self: flex-end;
-  background-color: #DCF8C6;
-  margin-left: 30%;
-}
-
-.other-message {
-  align-self: flex-start;
-  background-color: #FFFFFF;
-  margin-right: 30%;
-}
-
-.message-content {
-  margin-bottom: 5px;
-}
-
-.message-time {
-  font-size: 0.8em;
-  color: #888;
-  text-align: right;
-}
-
-.message-input {
-  display: flex;
-  margin-top: 20px;
-}
-
-input {
-  flex: 1;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 20px;
-  margin-right: 10px;
-}
-
-button {
-  padding: 10px 20px;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 20px;
-  cursor: pointer;
-}
-
-button:hover {
-  background-color: #45a049;
-}
-</style>
+  
+  .message-time {
+    font-size: 0.8em;
+    color: #888;
+    margin-top: 5px;
+  }
+  
+  .own-message .message-time {
+    text-align: right;
+  }
+  
+  .message-input {
+    display: flex;
+    margin: 20px;
+  }
+  
+  input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    margin-right: 10px;
+  }
+  
+  button {
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+  }
+  
+  button:hover {
+    background-color: #45a049;
+  }
+  </style>
