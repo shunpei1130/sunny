@@ -27,20 +27,7 @@
     <!-- チャットリストと特定のチャットルーム情報 -->
     <div v-else>
       <!-- チャットリスト -->
-      <div class="chat-list">
-        <div 
-          v-for="chat in chats" 
-          :key="chat.id" 
-          class="chat-item"
-          @click="openChat(chat)"
-        >
-          <img :src="chat.userPhoto" :alt="chat.username" class="user-avatar">
-          <div class="chat-info">
-            <span class="username">{{ chat.username }}</span>
-            <span class="last-message">{{ chat.lastMessage }}</span>
-          </div>
-        </div>
-      </div>
+      
 
       <!-- 特定のチャットルーム情報 -->
       <div v-if="specificChatRoom && !isSearching" class="specific-chat-room">
@@ -67,7 +54,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
-import { getFirestore, collection, query, where, getDocs, addDoc, onSnapshot, orderBy, doc } from 'firebase/firestore';
+import { getFirestore, collection, query, where, getDocs, addDoc, onSnapshot, doc } from 'firebase/firestore';
 import { auth } from '../firebase';
 
 export default {
@@ -77,7 +64,6 @@ export default {
     const router = useRouter();
     const searchQuery = ref('');
     const searchResults = ref([]);
-    const chats = ref([]);
     const specificChatRoom = ref(null);
     const participants = ref([]);
 
@@ -132,9 +118,6 @@ export default {
       router.push(`/chat/${chatRoomId}`);
     };
 
-    const openChat = (chat) => {
-      router.push(`/chat/${chat.id}`);
-    };
 
     const openChatWithUser = async (userId) => {
       const db = getFirestore();
@@ -163,45 +146,6 @@ export default {
       router.push(`/chat/${chatRoomId}`);
     };
 
-    const fetchChatRooms = () => {
-      const db = getFirestore();
-      const currentUser = auth.currentUser;
-      const chatRoomsRef = collection(db, 'chatRooms');
-      const q = query(
-        chatRoomsRef,
-        where('participants', 'array-contains', currentUser.uid),
-        orderBy('lastMessageAt', 'desc')
-      );
-
-      const unsubscribe = onSnapshot(q, async (snapshot) => {
-        const chatPromises = snapshot.docs.map(async (doc) => {
-          const chatData = doc.data();
-          const otherUserId = chatData.participants.find(id => id !== currentUser.uid);
-          
-          const profilesRef = collection(db, 'profiles');
-          const profileQuery = query(profilesRef, where('userId', '==', otherUserId));
-          const profileSnapshot = await getDocs(profileQuery);
-          
-          let userData = { username: 'Unknown User', photo: '' };
-          if (!profileSnapshot.empty) {
-            userData = profileSnapshot.docs[0].data();
-          }
-
-          return {
-            id: doc.id,
-            username: userData.username,
-            userPhoto: userData.photo,
-            lastMessage: chatData.lastMessage || '',
-            lastMessageAt: chatData.lastMessageAt ? chatData.lastMessageAt.toDate() : new Date(),
-          };
-        });
-
-        chats.value = await Promise.all(chatPromises);
-      });
-
-      onUnmounted(() => unsubscribe());
-    };
-
     const fetchSpecificChatRoom = () => {
   const db = getFirestore();
   const currentUser = auth.currentUser;
@@ -215,30 +159,33 @@ export default {
       const profilesRef = collection(db, 'profiles');
       
       const participantPromises = participantIds.map(async (userId) => {
-        const userQuery = query(profilesRef, where('userId', '==', userId));
-        const userSnapshot = await getDocs(userQuery);
-        if (!userSnapshot.empty) {
-          const userData = userSnapshot.docs[0].data();
-          
-          // 各参加者とのチャットルームを取得
-          const chatRoomsRef = collection(db, 'chatRooms');
-          const chatQuery = query(
-            chatRoomsRef,
-            where('participants', '==', [currentUser.uid, userId].sort())
-          );
-          const chatSnapshot = await getDocs(chatQuery);
-          let lastMessage = '';
-          if (!chatSnapshot.empty) {
-            const chatData = chatSnapshot.docs[0].data();
-            lastMessage = chatData.lastMessage || '';
+        // フォローしているユーザーかどうかを確認
+        if (store.state.following.includes(userId)) {
+          const userQuery = query(profilesRef, where('userId', '==', userId));
+          const userSnapshot = await getDocs(userQuery);
+          if (!userSnapshot.empty) {
+            const userData = userSnapshot.docs[0].data();
+            
+            // 各参加者とのチャットルームを取得
+            const chatRoomsRef = collection(db, 'chatRooms');
+            const chatQuery = query(
+              chatRoomsRef,
+              where('participants', '==', [currentUser.uid, userId].sort())
+            );
+            const chatSnapshot = await getDocs(chatQuery);
+            let lastMessage = '';
+            if (!chatSnapshot.empty) {
+              const chatData = chatSnapshot.docs[0].data();
+              lastMessage = chatData.lastMessage || '';
+            }
+            
+            return {
+              id: userId,
+              username: userData.username,
+              photo: userData.photo,
+              lastMessage: lastMessage
+            };
           }
-          
-          return {
-            id: userId,
-            username: userData.username,
-            photo: userData.photo,
-            lastMessage: lastMessage
-          };
         }
         return null;
       });
@@ -253,7 +200,6 @@ export default {
 };
 
     onMounted(() => {
-      fetchChatRooms();
       fetchSpecificChatRoom();
     });
 
@@ -271,13 +217,11 @@ export default {
     return {
       searchQuery,
       searchResults,
-      chats,
       specificChatRoom,
       participants,
       isSearching,
       searchUsers,
       startChat,
-      openChat,
       openChatWithUser,
       formatTime,
     };
